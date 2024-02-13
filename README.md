@@ -15,7 +15,7 @@ ingeniería de software, la programación y la ciberseguridad. Disfruta de hacer
 #### Sebastian Andres Rodriguez Perez.
 - [@T3cm0](https://github.com/T3cm0)
 <img src="https://i.imgur.com/xIrJKNT.jpeg" width="180" height="240">
-Nacido en Bogotá en 2004, estudiante de ingenieria en sistemas y Tecnico en sistemas, le gustá todo lo de electronica y hardware y la exploracion espacial.
+Nacido en Bogotá en 2004, estudiante de ingenieria en sistemas y Tecnico en sistemas, le gusta todo lo de electronica y hardware y la exploracion espacial.
 
 
 #### Gustavo Ortiz Loaiza.
