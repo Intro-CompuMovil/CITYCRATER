@@ -5,120 +5,201 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".RegisterBumpActivity"
-    android:padding="30dp"
     android:background="@color/backGreen">
 
     <LinearLayout
+        android:id="@+id/upperBar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:padding="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="center_vertical"
+        android:background="@color/seaGreen">
 
         <ImageView
-            android:id="@+id/imgIcon"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/icons8_info_90" />
+            android:id="@+id/imgLogo"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="10dp"
+            app:srcCompat="@drawable/logo" />
 
         <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
-            android:text="@string/register_bump"
-            android:textColor="@color/black"
-            android:textSize="20sp" />
+            android:text="@string/citycrater"
+            android:textSize="30sp"
+            android:layout_weight="1"
+            android:textColor="@color/black">
+        </TextView>
 
-        <RelativeLayout
-            android:id="@+id/locationLayout"
+        <ImageButton
+            android:id="@+id/btnProfile"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@color/seaGreen"
+            app:srcCompat="@drawable/usuario"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+
+    <FrameLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@+id/upperBar"
+        android:layout_above="@+id/sizeSpinner"
+        android:layout_marginBottom="10dp"
+        android:padding="10dp"
+        android:layout_weight="1">
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/osmMap"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </org.osmdroid.views.MapView>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp">
+            android:orientation="vertical"
+            android:background="@color/whiteTransparent">
 
-            <TextView
-                android:id="@+id/location"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="20dp"
-                android:text="@string/location" />
-
-            <EditText
-                android:id="@+id/txtUbicacion"
+            <LinearLayout
+                android:id="@+id/originLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/location"
-                android:background="@color/white" />
-        </RelativeLayout>
+                android:gravity="center_vertical"
+                android:padding="10dp">
 
-        <RelativeLayout
-            android:id="@+id/sizeLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp">
+                <EditText
+                    android:id="@+id/location"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:padding="2dp"
+                    android:textSize="15sp"
+                    android:background="@drawable/round_corner"
+                    android:backgroundTint="#91C1BD"
+                    android:hint="Origen"
+                    android:textAlignment="center"
+                    android:inputType="text"
+                    android:imeOptions="actionSend">
 
-            <TextView
-                android:id="@+id/size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="20dp"
-                android:text="@string/size" />
+                </EditText>
 
-            <Spinner
-                android:id="@+id/spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/size"
-                android:background="@color/white"
-                android:entries="@array/sizes" />
+            </LinearLayout>
 
-        </RelativeLayout>
+        </LinearLayout>
 
-        <RelativeLayout
-            android:id="@+id/camLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp">
+    </FrameLayout>
 
-            <TextView
-                android:id="@+id/camera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/btnCamera"
-                android:text="@string/plus" />
+    <Spinner
+        android:id="@+id/sizeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/absolute_round_corner"
+        android:backgroundTint="@color/white"
+        android:layout_above="@+id/cameraLayout"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="20dp"
+        android:entries="@array/sizes" />
 
-            <ImageButton
-                android:id="@+id/btnCamera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:background="@color/seaGreen"
-                app:srcCompat="@android:drawable/ic_menu_camera" />
+    <LinearLayout
+        android:id="@+id/cameraLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_above="@+id/btnRegisterBump"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="horizontal">
 
-        </RelativeLayout>
+        <ImageButton
+            android:id="@+id/btnCamera"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/absolute_round_corner"
+            android:padding="12dp"
+            android:layout_marginEnd="30dp"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/camara" />
 
         <ImageView
             android:id="@+id/imgBump"
-            android:layout_width="186dp"
-            android:layout_height="199dp"
-            android:layout_marginBottom="30dp"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginEnd="30dp"
+            app:srcCompat="@drawable/gallery"
+            tools:srcCompat="@drawable/gallery" />
 
-        <Button
-            android:id="@+id/btnRegisterBump"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/camLayout"
-            android:layout_centerInParent="true"
-            android:backgroundTint="@color/seaGreen"
-            android:text="@string/register" />
-
+        <ImageButton
+            android:id="@+id/btnGallery"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/absolute_round_corner"
+            android:padding="12dp"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/gallery" />
 
     </LinearLayout>
+
+    <Button
+        android:id="@+id/btnRegisterBump"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/navBar"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="@color/seaGreen"
+        android:text="@string/register" />
+
+    <LinearLayout
+        android:id="@+id/navBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:background="@color/seaGreen"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+
+        <ImageButton
+            android:id="@+id/btnReportBump"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_weight="0.3"
+            android:background="@drawable/absolute_round_corner"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/advertencia" />
+
+        <ImageButton
+            android:id="@+id/btnMap"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_weight="0.3"
+            android:background="@color/seaGreen"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/location" />
+
+        <ImageButton
+            android:id="@+id/btnFriends"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_weight="0.3"
+            android:background="@color/seaGreen"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/equipo" />
+
+    </LinearLayout>
+
+
 
 
 </RelativeLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="huecos">
+        <item>Hueco 1</item>
+        <item>Hueco 2</item>
+        <item>Hueco 3</item>
+        <item>Hueco 4</item>
+        <item>Hueco 5</item>
+        <item>Hueco 6</item>
+        <item>Hueco 7</item>
+
+    </string-array>
+</resources>

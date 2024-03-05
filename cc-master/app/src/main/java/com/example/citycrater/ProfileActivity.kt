@@ -1,9 +1,11 @@
 package com.example.citycrater
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
@@ -12,109 +14,158 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.citycrater.databinding.ActivityProfileBinding
+import com.example.citycrater.databinding.ActivityRegisterBumpBinding
+import com.example.citycrater.permissions.Permission
 import java.io.FileNotFoundException
 
 class ProfileActivity : AppCompatActivity() {
+
+    lateinit var binding: ActivityProfileBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_profile)
 
-        //pedir permisos de camara y galeria
-        permisoCamara()
+        binding = ActivityProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val btnCamera = findViewById<ImageButton>(R.id.btnCamera)
-        btnCamera.setOnClickListener { takePic() }
-
-        val btnGallery = findViewById<ImageButton>(R.id.btnGallery)
-        btnGallery.setOnClickListener { permisoGaleria() }
+        //LISTENNERS DE LA PANTALLA
+        setlistenners()
 
     }
 
-    fun permisoCamara(){
+    //LISTENNERS DE LA PANTALLA
+    fun setlistenners (){
 
+        binding.btnCamera.setOnClickListener {
+            permisoCamara()
+        }
+
+        binding.btnGallery.setOnClickListener {
+            permisoGaleria()
+        }
+    }
+    fun permisoGaleria(){
+        when {
+            ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.READ_MEDIA_IMAGES
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                selectPhoto()
+            }
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this, android.Manifest.permission.READ_MEDIA_IMAGES) -> {
+                Toast.makeText(this, "Requiere acceder a galeria", Toast.LENGTH_SHORT).show()
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES),
+                    Permission.MY_PERMISSION_REQUEST_GALLERY)
+            }
+            else -> {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES),
+                    Permission.MY_PERMISSION_REQUEST_GALLERY)
+            }
+        }
+    }
+    fun permisoCamara(){
         when {
             ContextCompat.checkSelfPermission(
                 this, android.Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED -> {
-                // You can use the API that requires the permission.
-                //performAction(...)
-                Toast.makeText(this, "Gracias", Toast.LENGTH_SHORT).show()
+                takePic()
             }
             ActivityCompat.shouldShowRequestPermissionRationale(
                 this, android.Manifest.permission.CAMERA) -> {
-                // In an educational UI, explain to the user why your app requires this
-                // permission for a specific feature to behave as expected, and what
-                // features are disabled if it's declined.
-                //showInContextUI(...)
+                Toast.makeText(this, "Requiere acceder a camara", Toast.LENGTH_SHORT).show()
                 requestPermissions(
                     arrayOf(android.Manifest.permission.CAMERA),
-                    Datos.MY_PERMISSION_REQUEST_CAMERA)
+                    Permission.MY_PERMISSION_REQUEST_CAMERA)
             }
             else -> {
-                // You can directly ask for the permission.
                 requestPermissions(
                     arrayOf(android.Manifest.permission.CAMERA),
-                    Datos.MY_PERMISSION_REQUEST_CAMERA)
+                    Permission.MY_PERMISSION_REQUEST_CAMERA)
             }
         }
-
-
     }
-
-    fun permisoGaleria(){
-
-        val pickImage = Intent(Intent.ACTION_PICK)
-        pickImage.type = "image/*"
-        startActivityForResult(pickImage, Datos.IMAGE_PICKER_REQUEST)
-
-
-    }
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
-            Datos.IMAGE_PICKER_REQUEST ->{
+            Permission.IMAGE_PICKER_REQUEST ->{
                 if(resultCode == Activity.RESULT_OK){
                     try {
-                        //Logica de seleccion de imagen
+                        val selectedImageUri = data!!.data
+                        if(data.data != null){
+                            binding.imgProfile.setImageURI(selectedImageUri)
+                        }
                     } catch (e: FileNotFoundException){
                         e.printStackTrace()
                     }
                 }
             }
-            Datos.REQUEST_IMAGE_CAPTURE ->{
-                if (requestCode == Datos.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Permission.REQUEST_IMAGE_CAPTURE ->{
+                if (requestCode == Permission.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
                     val imageBitmap = data?.extras?.get("data") as Bitmap
-                    val imgProfile = findViewById<ImageView>(R.id.imgProfile)
-                    imgProfile.setImageBitmap(imageBitmap)
+                    binding.imgProfile.setImageBitmap(imageBitmap)
+
+                    //guardar
+                    val imageUri = saveImageToGallery(imageBitmap)
+                    if (imageUri != null) {
+                        Toast.makeText(this, "Imagen guardada en la galería", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Error al guardar la imagen", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
+    fun saveImageToGallery(bitmap: Bitmap): Uri? {
+        val values = ContentValues()
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, "Imagen_${System.currentTimeMillis()}")
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/Camera") // <-- Change this line
 
+        val resolver = contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        if (uri != null) {
+            try {
+                val outStream = resolver.openOutputStream(uri)
+                if (outStream != null) {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
+                }
+                outStream?.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return null
+            }
+        }
+
+        return uri
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        //val textV = findViewById<TextView>(R.id.textView)
         when (requestCode) {
-            Datos.MY_PERMISSION_REQUEST_CAMERA -> {
-
-                // If request is cancelled, the result arrays are empty.
+            Permission.MY_PERMISSION_REQUEST_CAMERA -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    // Permission is granted. Continue the action or workflow
-                    // in your app.
-                    Toast.makeText(this, "Gracias", Toast.LENGTH_SHORT).show()
+                    takePic()
+                    Toast.makeText(this, "Permiso de cámara concedido", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Explain to the user that the feature is unavailable
-
+                    Toast.makeText(this, "Permiso de cámara negado", Toast.LENGTH_SHORT).show()
                 }
                 return
             }
+            Permission.MY_PERMISSION_REQUEST_GALLERY -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    selectPhoto()
+                    Toast.makeText(this, "Permiso de galería concedido", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Permiso de galería denegado", Toast.LENGTH_SHORT).show()
+                }
+            }
             else -> {
                 // Ignore all other requests.
-
             }
         }
     }
@@ -124,7 +175,7 @@ class ProfileActivity : AppCompatActivity() {
         val takePictureIntent =  Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takePictureIntent, Datos.REQUEST_IMAGE_CAPTURE);
+                startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE);
             } else {
                 Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show();
             }
@@ -132,7 +183,20 @@ class ProfileActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "No hay permiso de camara", Toast.LENGTH_SHORT).show()
             requestPermissions(arrayOf(android.Manifest.permission.CAMERA),
-                Datos.MY_PERMISSION_REQUEST_CAMERA)
+                Permission.MY_PERMISSION_REQUEST_CAMERA)
+        }
+    }
+
+    fun selectPhoto () {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val pickImage = Intent(Intent.ACTION_PICK)
+            pickImage.type = "image/*"
+            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
+        } else {
+            Toast.makeText(this, "No hay permiso de galeria", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES),
+                Permission.MY_PERMISSION_REQUEST_GALLERY)
         }
     }
 

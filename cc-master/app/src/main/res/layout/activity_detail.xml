@@ -4,7 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FriendsActivity">
+    tools:context=".DetailActivity"
+    android:background="@color/backGreen">
+
 
     <LinearLayout
         android:id="@+id/upperBar"
@@ -42,46 +44,85 @@
 
     </LinearLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_below="@+id/upperBar"
-        android:layout_above="@+id/navBar">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true">
 
-        <org.osmdroid.views.MapView
-            android:id="@+id/osmMap"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-        </org.osmdroid.views.MapView>
+        <ImageView
+            android:id="@+id/imgBump"
+            android:layout_width="183dp"
+            android:layout_height="162dp"
+            android:layout_marginBottom="30dp"
+            app:srcCompat="@drawable/gallery"
+            tools:srcCompat="@drawable/gallery" />
 
-        <LinearLayout
-            android:id="@+id/radioLayout"
-            android:layout_width="match_parent"
+
+        <RelativeLayout
+            android:id="@+id/locationLayout"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="20dp"
-            android:gravity="center_vertical"
-            android:background="@color/whiteTransparent">
-            <EditText
-                android:id="@+id/radio"
-                android:layout_width="0dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/location"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:padding="2dp"
-                android:textSize="15sp"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="10dp"
-                android:background="@drawable/round_corner"
-                android:backgroundTint="#91C1BD"
-                android:textAlignment="center"
-                android:hint="Radio de búsqeda"
-                android:inputType="text"
-                android:imeOptions="actionSend">
-            </EditText>
+                android:text="@string/location" />
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/txtlocation"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_toEndOf="@+id/location"
+                android:background="@drawable/absolute_round_corner"
+                android:backgroundTint="@color/white"/>
 
-    </FrameLayout>
+        </RelativeLayout>
 
+        <RelativeLayout
+            android:id="@+id/sizeLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="30dp">
+
+            <TextView
+                android:id="@+id/size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="10dp"
+                android:text="Size:" />
+
+            <TextView
+                android:id="@+id/txtSize"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_toEndOf="@id/size"
+                android:background="@drawable/absolute_round_corner"
+                android:backgroundTint="@color/white"/>
+
+        </RelativeLayout>
+
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/sizeLayout"
+            android:layout_centerInParent="true"
+            android:backgroundTint="@color/seaGreen"
+            android:text="delete / report fixed" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/navBar"
