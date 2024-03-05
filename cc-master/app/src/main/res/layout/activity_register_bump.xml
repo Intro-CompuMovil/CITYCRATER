@@ -25,10 +25,10 @@
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
             android:text="@string/register_bump"
-            android:textSize="20sp"
             android:textColor="@color/black"
-            android:layout_marginBottom="30dp"/>
+            android:textSize="20sp" />
 
         <RelativeLayout
             android:id="@+id/locationLayout"
@@ -40,9 +40,9 @@
                 android:id="@+id/location"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="20dp"
-                android:text="@string/location"
-                android:layout_centerVertical="true"/>
+                android:text="@string/location" />
 
             <EditText
                 android:id="@+id/txtUbicacion"
@@ -62,8 +62,8 @@
                 android:id="@+id/size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="20dp"
                 android:layout_centerVertical="true"
+                android:layout_marginEnd="20dp"
                 android:text="@string/size" />
 
             <Spinner
@@ -101,6 +101,13 @@
 
         </RelativeLayout>
 
+        <ImageView
+            android:id="@+id/imgBump"
+            android:layout_width="186dp"
+            android:layout_height="199dp"
+            android:layout_marginBottom="30dp"
+            tools:srcCompat="@tools:sample/avatars" />
+
         <Button
             android:id="@+id/btnRegisterBump"
             android:layout_width="wrap_content"
@@ -109,7 +116,6 @@
             android:layout_centerInParent="true"
             android:backgroundTint="@color/seaGreen"
             android:text="@string/register" />
-
 
 
     </LinearLayout>

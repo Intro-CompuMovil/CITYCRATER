@@ -3,9 +3,12 @@ package com.example.citycrater
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -17,8 +20,10 @@ class ProfileActivity : AppCompatActivity() {
         setContentView(R.layout.activity_profile)
 
         //pedir permisos de camara y galeria
+        permisoCamara()
+
         val btnCamera = findViewById<ImageButton>(R.id.btnCamera)
-        btnCamera.setOnClickListener { permisoCamara() }
+        btnCamera.setOnClickListener { takePic() }
 
         val btnGallery = findViewById<ImageButton>(R.id.btnGallery)
         btnGallery.setOnClickListener { permisoGaleria() }
@@ -78,6 +83,13 @@ class ProfileActivity : AppCompatActivity() {
                     }
                 }
             }
+            Datos.REQUEST_IMAGE_CAPTURE ->{
+                if (requestCode == Datos.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+                    val imageBitmap = data?.extras?.get("data") as Bitmap
+                    val imgProfile = findViewById<ImageView>(R.id.imgProfile)
+                    imgProfile.setImageBitmap(imageBitmap)
+                }
+            }
         }
     }
 
@@ -104,6 +116,23 @@ class ProfileActivity : AppCompatActivity() {
                 // Ignore all other requests.
 
             }
+        }
+    }
+
+    private fun takePic(){
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+        val takePictureIntent =  Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(takePictureIntent, Datos.REQUEST_IMAGE_CAPTURE);
+            } else {
+                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show();
+            }
+
+        } else {
+            Toast.makeText(this, "No hay permiso de camara", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA),
+                Datos.MY_PERMISSION_REQUEST_CAMERA)
         }
     }
 

@@ -33,17 +33,36 @@ class HomeActivity : AppCompatActivity() {
         }
 
         btnMap.setOnClickListener {
-            val intent = Intent(this, MapActivity::class.java)
-            startActivity(intent)
+            if (checkLocationPermission()) {
+                val intent = Intent(this, MapActivity::class.java)
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "No hay permiso de ubicacion", Toast.LENGTH_SHORT).show()
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    Datos.MY_PERMISSION_REQUEST_LOCATION)
+            }
         }
 
         btnFriends.setOnClickListener {
-            val intent = Intent(this, FriendsActivity::class.java)
-            startActivity(intent)
+            if (checkLocationPermission()) {
+                val intent = Intent(this, FriendsActivity::class.java)
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "No hay permiso de ubicacion", Toast.LENGTH_SHORT).show()
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    Datos.MY_PERMISSION_REQUEST_LOCATION)
+            }
         }
 
     }
 
+    private fun checkLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
     fun permisoUbicacion(){
 
         when {
