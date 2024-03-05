@@ -13,8 +13,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="vertical">
 
         <ImageView
             android:id="@+id/imgProfile"
@@ -23,111 +23,119 @@
             tools:srcCompat="@drawable/icons8_male_user_96" />
 
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <LinearLayout
             android:id="@+id/cameraLayout"
-            android:layout_marginBottom="30dp">
+            android:layout_width="151dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:orientation="horizontal"
+            android:gravity="center">
 
             <ImageButton
                 android:id="@+id/btnCamera"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                app:srcCompat="@android:drawable/ic_menu_camera"
-                android:background="@color/seaGreen"/>
+                android:background="@color/seaGreen"
+                app:srcCompat="@android:drawable/ic_menu_camera" />
+
+            <ImageButton
+                android:id="@+id/btnGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/seaGreen"
+                app:srcCompat="@android:drawable/ic_menu_gallery" />
 
 
-        </RelativeLayout>
+        </LinearLayout>
 
         <RelativeLayout
+            android:id="@+id/nameLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/nameLayout"
             android:layout_marginBottom="10dp">
 
             <TextView
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/name"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="10dp"
-                android:layout_centerVertical="true"/>
+                android:text="@string/name" />
 
             <EditText
                 android:id="@+id/txtName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:layout_toEndOf="@+id/name" />
+                android:layout_toEndOf="@+id/name"
+                android:background="@color/white" />
 
         </RelativeLayout>
 
         <RelativeLayout
+            android:id="@+id/emailLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/emailLayout"
             android:layout_marginBottom="10dp">
 
             <TextView
                 android:id="@+id/email"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/email"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="10dp"
-                android:layout_centerVertical="true"/>
+                android:text="@string/email" />
 
             <EditText
                 android:id="@+id/txtEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:layout_toEndOf="@id/email" />
+                android:layout_toEndOf="@id/email"
+                android:background="@color/white" />
 
         </RelativeLayout>
 
         <RelativeLayout
+            android:id="@+id/usernameLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/usernameLayout"
             android:layout_marginBottom="10dp">
 
             <TextView
                 android:id="@+id/username"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/usernameTitle"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="10dp"
-                android:layout_centerVertical="true"/>
+                android:text="@string/usernameTitle" />
 
             <EditText
                 android:id="@+id/txtUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:layout_toEndOf="@id/username" />
+                android:layout_toEndOf="@id/username"
+                android:background="@color/white" />
 
         </RelativeLayout>
 
         <RelativeLayout
+            android:id="@+id/passwordLayout"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/passwordLayout">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/password"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/passwordTitle"
+                android:layout_centerVertical="true"
                 android:layout_marginEnd="10dp"
-                android:layout_centerVertical="true"/>
+                android:text="@string/passwordTitle" />
 
             <EditText
                 android:id="@+id/txtPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:layout_toEndOf="@id/password" />
+                android:layout_toEndOf="@id/password"
+                android:background="@color/white" />
 
         </RelativeLayout>
 
@@ -135,9 +143,10 @@
             android:id="@+id/button2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/save"
             android:layout_marginTop="30dp"
-            android:backgroundTint="@color/seaGreen"/>
+            android:backgroundTint="@color/seaGreen"
+            android:text="@string/save" />
+
 
     </LinearLayout>
 
