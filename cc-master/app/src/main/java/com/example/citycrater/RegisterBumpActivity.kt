@@ -181,11 +181,6 @@ class RegisterBumpActivity : AppCompatActivity() {
         binding.btnGallery.setOnClickListener {
             permisoGaleria()
         }
-
-        binding.btnRegisterBump.setOnClickListener {
-            val intent = Intent(this, RegisterBumpActivity::class.java)
-            startActivity(intent)
-        }
     }
 
     //LISTENNER DE BUSQUEDA DE UBICACION
