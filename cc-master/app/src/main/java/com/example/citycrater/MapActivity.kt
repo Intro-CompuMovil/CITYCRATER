@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -16,18 +17,15 @@ import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.example.citycrater.databinding.ActivityMapBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
-import com.example.citycrater.permissions.Permission
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.gson.Gson
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
 import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.config.Configuration
@@ -40,8 +38,6 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import java.io.IOException
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 class MapActivity : AppCompatActivity() {
 
@@ -100,11 +96,7 @@ class MapActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        //this will refresh the osmdroid configuration on resuming.
-        //if you make changes to the configuration, use
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
-        map!!.onResume() //needed for compass, my location overlays, v6.0.0 and up
+        map!!.onResume()
 
         mSensorManager.registerListener(mLightSensorListener, mLightSensor,
             SensorManager.SENSOR_DELAY_NORMAL)
@@ -128,12 +120,8 @@ class MapActivity : AppCompatActivity() {
     }
     override fun onPause() {
         super.onPause()
-        //this will refresh the osmdroid configuration on resuming.
-        //if you make changes to the configuration, use
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().save(this, prefs);
         stopLocationUpdates()
-        map!!.onPause()  //needed for compass, my location overlays, v6.0.0 and up
+        map!!.onPause()
         mSensorManager.unregisterListener(mLightSensorListener)
     }
 
@@ -322,6 +310,7 @@ class MapActivity : AppCompatActivity() {
             val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
         }
+
     }
 
     private fun listennerBtnGo(){
@@ -338,6 +327,7 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
+
     //FUNCIONES RELACIONADAS AL MAPA
     private fun createOverlayEvents(): MapEventsOverlay {
         val overlayEventos = MapEventsOverlay(object : MapEventsReceiver {
@@ -353,42 +343,37 @@ class MapActivity : AppCompatActivity() {
     }
     fun createMarker(p: GeoPoint, title: String?, desc: String?, iconID: Int, markerType: String) {
         if (map != null) {
-            if(markerType == MarkerType.ORIGIN){
-                if (originMarker == null) {
-                    originMarker = Marker(map)
-                }
-                title?.let { originMarker!!.title = it }
-                desc?.let { originMarker!!.subDescription = it }
-                if (iconID != 0) {
-                    val myIcon = resources.getDrawable(iconID, this.theme)
+
+            lateinit var myIcon: Drawable
+            if (iconID != 0) {
+                myIcon = resources.getDrawable(iconID, this.theme)
+            }
+
+            when (markerType) {
+                MarkerType.ORIGIN -> {
+                    originMarker = originMarker ?: Marker(map)
+                    title?.let { originMarker!!.title = it }
+                    desc?.let { originMarker!!.subDescription = it }
                     originMarker!!.icon = myIcon
+                    originMarker!!.position = p
+                    originMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 }
-                originMarker!!.position = p
-                originMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            } else if (markerType == MarkerType.DESTINATION){
-                if (destinationMarker == null) {
-                    destinationMarker = Marker(map)
-                }
-                title?.let { destinationMarker!!.title = it }
-                desc?.let { destinationMarker!!.subDescription = it }
-                if (iconID != 0) {
-                    val myIcon = resources.getDrawable(iconID, this.theme)
+                MarkerType.DESTINATION -> {
+                    destinationMarker = destinationMarker ?: Marker(map)
+                    title?.let { destinationMarker!!.title = it }
+                    desc?.let { destinationMarker!!.subDescription = it }
                     destinationMarker!!.icon = myIcon
+                    destinationMarker!!.position = p
+                    destinationMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 }
-                destinationMarker!!.position = p
-                destinationMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            } else if (markerType == MarkerType.CURRENT) {
-                if (currentLocationmarker == null) {
-                    currentLocationmarker = Marker(map)
-                }
-                title?.let { currentLocationmarker!!.title = it }
-                desc?.let { currentLocationmarker!!.subDescription = it }
-                if (iconID != 0) {
-                    val myIcon = resources.getDrawable(iconID, this.theme)
+                MarkerType.CURRENT -> {
+                    currentLocationmarker = currentLocationmarker ?: Marker(map)
+                    title?.let { currentLocationmarker!!.title = it }
+                    desc?.let { currentLocationmarker!!.subDescription = it }
                     currentLocationmarker!!.icon = myIcon
+                    currentLocationmarker!!.position = p
+                    currentLocationmarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 }
-                currentLocationmarker!!.position = p
-                currentLocationmarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             }
         }
     }
