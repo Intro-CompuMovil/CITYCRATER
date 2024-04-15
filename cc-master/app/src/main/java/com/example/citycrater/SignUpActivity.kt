@@ -20,8 +20,13 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
         spinner.onItemSelectedListener = this
 
         btnSign.setOnClickListener {
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
+            if(spinner.selectedItem.toString().equals("Driver")){
+                val intent = Intent(this, HomeActivity::class.java)
+                startActivity(intent)
+            }else if (spinner.selectedItem.toString().equals("Admin")){
+                val intent = Intent(this, HomeAdminActivity::class.java)
+                startActivity(intent)
+            }
         }
     }
 
