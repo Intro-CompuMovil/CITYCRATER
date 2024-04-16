@@ -54,48 +54,49 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/navBar"
+        android:layout_below="@+id/upperBar"
+        android:layout_centerInParent="true"
         android:gravity="center"
-        android:layout_centerInParent="true">
+        android:orientation="vertical">
 
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="10dp"
             android:gravity="center"
             android:padding="10dp">
 
             <ImageView
                 android:id="@+id/imgBumpBefore"
-                android:layout_width="183dp"
-                android:layout_height="162dp"
-                android:layout_weight="0.5"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:layout_marginEnd="10dp"
+                android:layout_weight="0.5"
                 app:srcCompat="@drawable/gallery"
                 tools:srcCompat="@drawable/gallery" />
 
             <ImageView
                 android:id="@+id/imgBumpAfter"
-                android:layout_width="183dp"
-                android:layout_height="162dp"
-                android:layout_weight="0.5"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:layout_marginStart="10dp"
+                android:layout_weight="0.5"
                 app:srcCompat="@drawable/gallery"
                 tools:srcCompat="@drawable/gallery" />
 
         </LinearLayout>
 
 
-
         <RelativeLayout
             android:id="@+id/locationLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="20dp"
             android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginBottom="10dp">
 
             <TextView
@@ -112,9 +113,23 @@
                 android:layout_height="30dp"
                 android:layout_toEndOf="@+id/location"
                 android:background="@drawable/absolute_round_corner"
-                android:backgroundTint="@color/white"/>
+                android:text="hola"
+                android:gravity="center_vertical"
+                android:paddingStart="10dp"
+                android:backgroundTint="@color/white" />
 
         </RelativeLayout>
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/osmMap"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="1">
+
+        </org.osmdroid.views.MapView>
 
         <RelativeLayout
             android:id="@+id/sizeLayout"
@@ -122,7 +137,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
-            android:layout_marginBottom="30dp">
+            android:layout_marginBottom="20dp">
 
             <TextView
                 android:id="@+id/size"
@@ -138,7 +153,7 @@
                 android:layout_height="30dp"
                 android:layout_toEndOf="@id/size"
                 android:background="@drawable/absolute_round_corner"
-                android:backgroundTint="@color/white"/>
+                android:backgroundTint="@color/white" />
 
         </RelativeLayout>
 
@@ -149,6 +164,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/sizeLayout"
             android:layout_centerInParent="true"
+            android:layout_marginBottom="20dp"
             android:backgroundTint="@color/seaGreen"
             android:text="Eliminar hueco" />
 
