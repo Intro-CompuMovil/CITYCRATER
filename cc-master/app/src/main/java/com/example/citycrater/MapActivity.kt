@@ -132,6 +132,8 @@ class MapActivity : AppCompatActivity() {
                 bumpLocationMarker = createMarkerRetMark(GeoPoint(x, y), "null", null, R.drawable.baseline_location_pin_25)
                 bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
                     val intent = Intent(this, ReportFixedActivity::class.java)
+                    intent.putExtra("latitude", x.toString())
+                    intent.putExtra("longitude", y.toString())
                     startActivity(intent)
                     true
                 }
