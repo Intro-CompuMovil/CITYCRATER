@@ -26,6 +26,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import org.json.JSONObject
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
 import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.config.Configuration
@@ -50,6 +51,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
 
+
     //SENSORES
     private lateinit var mSensorManager: SensorManager
     private lateinit var mLightSensor: Sensor
@@ -62,6 +64,7 @@ class MapActivity : AppCompatActivity() {
     private var roadOverlay: Polyline? = null
     private var originMarker: Marker? = null
     private var destinationMarker: Marker? = null
+    private var bumpLocationMarker: Marker? = null
     private var settinOrigin: Boolean = false
     private var settingDestination: Boolean = false
 
@@ -92,11 +95,14 @@ class MapActivity : AppCompatActivity() {
 
         map!!.overlays.add(createOverlayEvents())
 
+
     }
 
     override fun onResume() {
         super.onResume()
         map!!.onResume()
+
+
 
         mSensorManager.registerListener(mLightSensorListener, mLightSensor,
             SensorManager.SENSOR_DELAY_NORMAL)
@@ -117,6 +123,24 @@ class MapActivity : AppCompatActivity() {
                 }
             }
         }
+
+
+        var bumpLocations: List<Pair<Double, Double>> = readJsonPairs("BumpLocations.json")
+        if(bumpLocations.isNotEmpty()){
+            bumpLocations.forEachIndexed { index, bumpLocation ->
+                val (x, y) = bumpLocation
+                bumpLocationMarker = createMarkerRetMark(GeoPoint(x, y), "null", null, R.drawable.baseline_location_pin_25)
+                bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
+                    val intent = Intent(this, ReportFixedActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                bumpLocationMarker?.let { map!!.overlays.add(it) }
+
+            }
+        }
+
+
     }
     override fun onPause() {
         super.onPause()
@@ -151,6 +175,7 @@ class MapActivity : AppCompatActivity() {
                                 createMarker(position, addressString, null, R.drawable.baseline_location_on_24, MarkerType.ORIGIN)
                                 originMarker?.let { map!!.overlays.add(it) }
                                 map!!.controller.setCenter(originMarker!!.position)
+
 
                             } else {
                                 Log.i("Geocoder", "Dirección no encontrada:" + addressString)
@@ -191,6 +216,8 @@ class MapActivity : AppCompatActivity() {
                                 createMarker(position, addressString, null, R.drawable.baseline_location_on_24, MarkerType.DESTINATION)
                                 destinationMarker?.let { map!!.overlays.add(it) }
                                 map!!.controller.setCenter(destinationMarker!!.position)
+
+
 
                             } else {
                                 Log.i("Geocoder", "Dirección no encontrada:" + addressString)
@@ -271,6 +298,14 @@ class MapActivity : AppCompatActivity() {
                     createMarker(point, "you", null, R.drawable.baseline_location_pin_24, MarkerType.CURRENT)
                     currentLocationmarker?.let { map!!.overlays.add(it) }
                     //map!!.controller.setCenter(currentLocationmarker!!.position)
+
+
+
+                    currentLocationmarker!!.setOnMarkerClickListener { marker, mapView ->
+                        Log.i("FLAGLISTENER", "HOLA")
+                        true  // Returning true consumes the click event
+                    }
+
                 }
             }
         }
@@ -310,6 +345,8 @@ class MapActivity : AppCompatActivity() {
             val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
         }
+
+
 
     }
 
@@ -357,6 +394,7 @@ class MapActivity : AppCompatActivity() {
                     originMarker!!.icon = myIcon
                     originMarker!!.position = p
                     originMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+
                 }
                 MarkerType.DESTINATION -> {
                     destinationMarker = destinationMarker ?: Marker(map)
@@ -377,6 +415,24 @@ class MapActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun createMarkerRetMark(p: GeoPoint, title: String?, desc: String?, iconID: Int): Marker? {
+        var marker: Marker? = null
+        if (map != null) {
+            marker = Marker(map)
+            title?.let { marker.title = it }
+            desc?.let { marker.subDescription = it }
+            if (iconID != 0) {
+                val myIcon = resources.getDrawable(iconID, this.theme)
+                marker.icon = myIcon
+            }
+            marker.position = p
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        }
+
+        return marker
+    }
+
     private fun longPressOnMap(p: GeoPoint) {
         val address = MapManager.getAddressFromCoordinates(p.latitude, p.longitude)
 
@@ -424,6 +480,24 @@ class MapActivity : AppCompatActivity() {
             // Limpia la variable roadOverlay
             roadOverlay = null
         }
+    }
+
+
+    fun readJsonPairs(fileName: String): List<Pair<Double, Double>> {
+        val inputStream = assets.open(fileName)
+        val jsonString = inputStream.bufferedReader().use { it.readText() }
+        val json = JSONObject(jsonString)
+        val locationsArray = json.getJSONArray("locations")
+        val pairs = mutableListOf<Pair<Double, Double>>()
+
+        for (i in 0 until locationsArray.length()) {
+            val locationObject = locationsArray.getJSONObject(i)
+            val latitude = locationObject.getDouble("latitude")
+            val longitude = locationObject.getDouble("longitude")
+            pairs.add(Pair(latitude, longitude))
+        }
+
+        return pairs
     }
 
 }
