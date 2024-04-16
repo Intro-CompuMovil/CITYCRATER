@@ -29,9 +29,18 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
+        //LISTENNERS DE LA PANTALLA
+        setListeners ()
+
         //pedir permisos de ubicacion
         permisoUbicacion()
 
+
+
+    }
+
+    //LISTENNERS DE LA PANTALLA
+    private fun setListeners (){
         binding.btnProfile.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
@@ -50,15 +59,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         binding.btnMap.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                val intent = Intent(this, MapActivity::class.java)
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "No hay permiso de ubicacion", Toast.LENGTH_SHORT).show()
-                requestPermissions(
-                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                    Permission.MY_PERMISSION_REQUEST_LOCATION)
-            }
+            goToMap()
         }
 
         binding.btnFriends.setOnClickListener {
@@ -72,9 +73,19 @@ class HomeActivity : AppCompatActivity() {
                     Permission.MY_PERMISSION_REQUEST_LOCATION)
             }
         }
-
     }
 
+    private fun goToMap(){
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val intent = Intent(this, MapActivity::class.java)
+            startActivity(intent)
+        } else {
+            Toast.makeText(this, "No hay permiso de ubicacion", Toast.LENGTH_SHORT).show()
+            requestPermissions(
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                Permission.MY_PERMISSION_REQUEST_LOCATION)
+        }
+    }
     fun permisoUbicacion(){
 
         when {
@@ -82,7 +93,7 @@ class HomeActivity : AppCompatActivity() {
                 this, android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
                 // You can use the API that requires the permission.
-                Toast.makeText(this, "Acceso a ubicación", Toast.LENGTH_SHORT).show()
+                goToMap()
             }
             ActivityCompat.shouldShowRequestPermissionRationale(
                 this, android.Manifest.permission.ACCESS_FINE_LOCATION) -> {
@@ -101,10 +112,10 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        //val textV = findViewById<TextView>(R.id.textView)
         when (requestCode) {
             Permission.MY_PERMISSION_REQUEST_LOCATION -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    goToMap()
                     Toast.makeText(this, "Permiso de ubicación concedido", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Permiso de ubicación negado", Toast.LENGTH_SHORT).show()

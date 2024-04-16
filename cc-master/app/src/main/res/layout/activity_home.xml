@@ -16,22 +16,13 @@
         android:gravity="center_vertical"
         android:background="@color/seaGreen">
 
-        <ImageView
-            android:id="@+id/imgLogo"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginEnd="10dp"
-            app:srcCompat="@drawable/logo" />
-
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:id="@+id/title"
-            android:text="@string/citycrater"
-            android:textSize="30sp"
-            android:layout_weight="1"
-            android:textColor="@color/black">
+            android:layout_weight="1">
+
         </TextView>
+
 
         <ImageButton
             android:id="@+id/btnReports"
@@ -52,13 +43,45 @@
 
     </LinearLayout>
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Bienvenid@"
-        android:textAlignment="center"
-        android:textSize="45sp"></TextView>
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_centerInParent="true">
+
+        <ImageView
+            android:id="@+id/imgLogo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            app:srcCompat="@drawable/logo" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/imgLogo"
+            android:layout_centerInParent="true"
+            android:layout_marginBottom="30dp"
+            android:text="@string/citycrater"
+            android:textColor="@color/black"
+            android:textSize="30sp">
+
+        </TextView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title"
+            android:layout_centerInParent="true"
+            android:text="Bienvenid@"
+            android:textAlignment="center"
+            android:textSize="30sp">
+
+        </TextView>
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
