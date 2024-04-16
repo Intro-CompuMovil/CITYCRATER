@@ -3,23 +3,32 @@ package com.example.citycrater
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.UserManager
 import android.view.View
 import android.widget.AdapterView
 import android.widget.Button
 import android.widget.Spinner
 import android.widget.Toast
+import com.example.citycrater.databinding.ActivityHomeBinding
+import com.example.citycrater.databinding.ActivitySignUpBinding
+import com.example.citycrater.users.UserSessionManager
 
 class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener {
+    lateinit var binding: ActivitySignUpBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_sign_up)
+        binding = ActivitySignUpBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        val btnSign = findViewById<Button>(R.id.btnSign)
-        val spinner = findViewById<Spinner>(R.id.userType)
+        binding.userType.onItemSelectedListener = this
 
-        spinner.onItemSelectedListener = this
-
-        btnSign.setOnClickListener {
+        binding.btnSign.setOnClickListener {
+            if(binding.userType.selectedItem.toString() == UserSessionManager.ADMIN){
+                UserSessionManager.CURRENT = UserSessionManager.ADMIN
+            }else if (binding.userType.selectedItem.toString() == UserSessionManager.DRIVER){
+                UserSessionManager.CURRENT = UserSessionManager.DRIVER
+            }
             val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
         }

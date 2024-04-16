@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RegisterBumpActivity"
-    android:background="@color/backGreen">
+    android:background="@color/backGreen"
+    tools:context=".ReportFixedActivity">
 
     <LinearLayout
         android:id="@+id/upperBar"
@@ -122,38 +122,57 @@
         android:id="@+id/cameraLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
         android:layout_above="@+id/btnRegisterBump"
         android:layout_centerInParent="true"
+        android:layout_marginBottom="20dp"
         android:gravity="center"
         android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/btnCamera"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="@drawable/absolute_round_corner"
-            android:padding="12dp"
-            android:layout_marginEnd="30dp"
-            android:scaleType="centerInside"
-            app:srcCompat="@drawable/camara" />
+
 
         <ImageView
-            android:id="@+id/imgBump"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginEnd="30dp"
+            android:id="@+id/imgBumpBefore"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginEnd="10dp"
             app:srcCompat="@drawable/gallery"
             tools:srcCompat="@drawable/gallery" />
 
-        <ImageButton
-            android:id="@+id/btnGallery"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="@drawable/absolute_round_corner"
-            android:padding="12dp"
-            android:scaleType="centerInside"
-            app:srcCompat="@drawable/gallery" />
+        <ImageView
+            android:id="@+id/imgBumpAfter"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginEnd="10dp"
+            app:srcCompat="@drawable/gallery"
+            tools:srcCompat="@drawable/gallery" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btnCamera"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/absolute_round_corner"
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/camara" />
+
+            <ImageButton
+                android:id="@+id/btnGallery"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/absolute_round_corner"
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/gallery" />
+
+        </LinearLayout>
+
 
     </LinearLayout>
 
@@ -165,7 +184,7 @@
         android:layout_centerInParent="true"
         android:layout_marginBottom="20dp"
         android:backgroundTint="@color/seaGreen"
-        android:text="@string/register" />
+        android:text="Reportar reparación" />
 
     <LinearLayout
         android:id="@+id/navBar"
@@ -207,8 +226,5 @@
             app:srcCompat="@drawable/equipo" />
 
     </LinearLayout>
-
-
-
 
 </RelativeLayout>

@@ -28,6 +28,7 @@ import com.example.citycrater.databinding.ActivityRegisterBumpBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.permissions.Permission
+import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -73,6 +74,14 @@ class RegisterBumpActivity : AppCompatActivity() {
 
         binding = ActivityRegisterBumpBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //vista de admin
+        if(UserSessionManager.setUserView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
 
         //INICIALIZACIÓN DE VARIABLES
         initialize()

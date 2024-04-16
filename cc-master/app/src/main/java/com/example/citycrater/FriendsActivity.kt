@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.example.citycrater.databinding.ActivityFriendsBinding
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.permissions.Permission
+import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -68,6 +69,14 @@ class FriendsActivity : AppCompatActivity() {
 
         binding = ActivityFriendsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //vista de admin
+        if(UserSessionManager.setUserView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
 
         //INICIALIZACION DE VARIABLES
         initialize()

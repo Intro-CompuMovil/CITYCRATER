@@ -36,6 +36,15 @@
         </TextView>
 
         <ImageButton
+            android:id="@+id/btnReports"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/seaGreen"
+            app:srcCompat="@drawable/sobre"
+            android:scaleType="centerInside" />
+
+        <ImageButton
             android:id="@+id/btnProfile"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -46,6 +55,7 @@
     </LinearLayout>
 
     <ListView
+        android:id="@+id/reqList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/upperBar"

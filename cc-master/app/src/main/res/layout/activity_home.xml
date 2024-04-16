@@ -34,6 +34,15 @@
         </TextView>
 
         <ImageButton
+            android:id="@+id/btnReports"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/seaGreen"
+            app:srcCompat="@drawable/sobre"
+            android:scaleType="centerInside" />
+
+        <ImageButton
             android:id="@+id/btnProfile"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -46,11 +55,10 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Bienvenid@"
         android:layout_centerInParent="true"
+        android:text="Bienvenid@"
         android:textAlignment="center"
-        android:textSize="45sp">
-    </TextView>
+        android:textSize="45sp"></TextView>
 
     <LinearLayout
         android:layout_width="match_parent"

@@ -35,6 +35,15 @@
         </TextView>
 
         <ImageButton
+            android:id="@+id/btnReports"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/seaGreen"
+            app:srcCompat="@drawable/sobre"
+            android:scaleType="centerInside" />
+
+        <ImageButton
             android:id="@+id/btnProfile"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -51,13 +60,34 @@
         android:gravity="center"
         android:layout_centerInParent="true">
 
-        <ImageView
-            android:id="@+id/imgBump"
-            android:layout_width="183dp"
-            android:layout_height="162dp"
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="30dp"
-            app:srcCompat="@drawable/gallery"
-            tools:srcCompat="@drawable/gallery" />
+            android:gravity="center"
+            android:padding="10dp">
+
+            <ImageView
+                android:id="@+id/imgBumpBefore"
+                android:layout_width="183dp"
+                android:layout_height="162dp"
+                android:layout_weight="0.5"
+                android:layout_marginEnd="10dp"
+                app:srcCompat="@drawable/gallery"
+                tools:srcCompat="@drawable/gallery" />
+
+            <ImageView
+                android:id="@+id/imgBumpAfter"
+                android:layout_width="183dp"
+                android:layout_height="162dp"
+                android:layout_weight="0.5"
+                android:layout_marginStart="10dp"
+                app:srcCompat="@drawable/gallery"
+                tools:srcCompat="@drawable/gallery" />
+
+        </LinearLayout>
+
 
 
         <RelativeLayout
@@ -120,7 +150,7 @@
             android:layout_below="@+id/sizeLayout"
             android:layout_centerInParent="true"
             android:backgroundTint="@color/seaGreen"
-            android:text="delete / report fixed" />
+            android:text="Eliminar hueco" />
 
     </LinearLayout>
 

@@ -4,21 +4,18 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ListView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.example.citycrater.databinding.ActivityHomeBinding
-import com.example.citycrater.databinding.ActivityRequestsBinding
+import com.example.citycrater.databinding.ActivityReportFixedBinding
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
 
-class RequestsActivity : AppCompatActivity() {
-    lateinit var binding: ActivityRequestsBinding
+class ReportFixedActivity : AppCompatActivity() {
+    lateinit var binding: ActivityReportFixedBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityRequestsBinding.inflate(layoutInflater)
+        binding = ActivityReportFixedBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
 
@@ -29,13 +26,6 @@ class RequestsActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         }
-
-        binding.reqList.setOnItemClickListener(object: AdapterView.OnItemClickListener {
-            override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val intent = Intent(baseContext, DetailActivity::class.java)
-                startActivity(intent)
-            }
-        })
 
         binding.btnProfile.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
