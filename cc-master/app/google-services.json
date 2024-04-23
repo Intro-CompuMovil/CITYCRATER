@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "669726418517",
+    "project_id": "citycrater",
+    "storage_bucket": "citycrater.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:669726418517:android:8fe914032d02a59c6ed6dc",
+        "android_client_info": {
+          "package_name": "com.example.citycrater"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVAOnIqtvPWyKvof_WK3FHKyDkXSwPDhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

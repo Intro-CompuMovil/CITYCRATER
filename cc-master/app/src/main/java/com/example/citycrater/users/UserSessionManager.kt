@@ -11,6 +11,7 @@ class UserSessionManager {
         const val DRIVER = "Driver"
         const val ADMIN = "Admin"
         lateinit var CURRENT: String
+        const val PATH_USERS="users/"
 
         fun setUserView (button: ImageButton): Boolean{
             if(UserSessionManager.CURRENT == UserSessionManager.DRIVER){
