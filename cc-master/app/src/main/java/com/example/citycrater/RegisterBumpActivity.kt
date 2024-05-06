@@ -14,8 +14,10 @@ import android.location.Geocoder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.os.StrictMode
 import android.provider.MediaStore
+import android.text.TextUtils
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
@@ -23,16 +25,28 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityMapBinding
 import com.example.citycrater.databinding.ActivityRegisterBumpBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
+import com.example.citycrater.model.Bump
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.UploadTask
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
 import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.config.Configuration
@@ -44,8 +58,12 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
+import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class RegisterBumpActivity : AppCompatActivity() {
 
@@ -62,6 +80,17 @@ class RegisterBumpActivity : AppCompatActivity() {
     private lateinit var mLightSensorListener: SensorEventListener
     private var darkModeLum: Boolean = false
     private var lightModeLum: Boolean = true
+
+    //PHOTO
+    private lateinit var photoUri: Uri
+    var localPhoto: Uri? = null
+    var url: String = ""
+
+    //DATABASE
+    private val database = FirebaseDatabase.getInstance()
+    private lateinit var myRef: DatabaseReference
+    val TAG = "REGISTER_BUMP"
+    val TAG_LOCATION = "LOCATION"
 
     //GEOCODER
     var mGeocoder: Geocoder? = null
@@ -105,7 +134,7 @@ class RegisterBumpActivity : AppCompatActivity() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED) {
             mFusedLocationProviderClient.lastLocation.addOnSuccessListener(this) { location ->
-                Log.i("LOCATION", "onSuccess location")
+                Log.i(TAG_LOCATION, "onSuccess location")
                 if (location != null) {
                     Log.i("LOCATION", "Longitud: " + location.longitude)
                     Log.i("LOCATION", "Latitud: " + location.latitude)
@@ -114,7 +143,7 @@ class RegisterBumpActivity : AppCompatActivity() {
                     val startPoint = GeoPoint(location.latitude, location.longitude);
                     mapController.setCenter(startPoint);
                 } else {
-                    Log.i("LOCATION", "FAIL location")
+                    Log.i(TAG_LOCATION, "FAIL location")
                 }
             }
         }
@@ -190,6 +219,106 @@ class RegisterBumpActivity : AppCompatActivity() {
         binding.btnGallery.setOnClickListener {
             permisoGaleria()
         }
+
+        binding.btnRegisterBump.setOnClickListener {
+            registerBump()
+        }
+    }
+
+    private fun registerBump() {
+        if (validaetForm()) {
+            val newBump = Bump(currentLocationmarker!!.position.latitude,
+                currentLocationmarker!!.position.longitude,
+                binding.sizeSpinner.selectedItem.toString())
+
+            myRef = database.getReference(DataBase.PATH_BUMPS)
+
+            // Query the database for Bumps with the same latitude and longitude
+            val query = myRef.orderByChild("latitude").equalTo(newBump.latitude)
+                .limitToFirst(1)
+
+            query.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    var exists = false
+
+                    for (snapshot in dataSnapshot.children) {
+                        val bump = snapshot.getValue(Bump::class.java)
+                        if (bump != null && bump.longitude == newBump.longitude) {
+                            exists = true
+                            break
+                        }
+                    }
+
+                    if (!exists) {
+                        // If no Bump with the same latitude and longitude exists, register the new Bump
+                        val key = myRef.push().key
+                        myRef = database.getReference(DataBase.PATH_BUMPS + key)
+
+                        myRef.setValue(newBump)
+                            .addOnSuccessListener {
+                                saveImage(key)
+                                Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
+                            }
+                            .addOnFailureListener { exception ->
+                                Log.w(TAG, "Failed to save bump: $exception")
+                            }
+                    } else {
+                        Toast.makeText(baseContext, "A bump with the same location already exists", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Log.w(TAG, "Failed to read value: $databaseError")
+                }
+            })
+        } else {
+            Toast.makeText(this, "Complete data", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveImage(key: String?){
+        if(key != null){
+            //referencia de la imagen en la bd
+            val storageRef = FirebaseStorage.getInstance().reference
+            val imagesRef = storageRef.child(DataBase.PATH_BUMPS + key)
+
+            // Crea una referencia única para la imagen (por ejemplo, usando el timestamp actual)
+            val imageName = DataBase.BUMP_REGISTERED_IMAGE_NAME + "_${key}.jpg"
+            val imageRef = imagesRef.child(imageName)
+
+            // Sube la imagen al Firebase Storage
+            imageRef.putFile(localPhoto!!).addOnSuccessListener(object :
+                OnSuccessListener<UploadTask.TaskSnapshot> {
+                override fun onSuccess(taskSnapshot: UploadTask.TaskSnapshot) {
+                    Log.d(TAG, "Successfully uploaded image, REGISTER OF BUMP COMPLETED")
+                    Toast.makeText(baseContext, "Register bump correct", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(baseContext, MapActivity::class.java))
+                }
+            }).addOnFailureListener(object : OnFailureListener {
+                override fun onFailure(exception: Exception) {
+                    // Handle unsuccessful uploads
+                    Log.w(TAG, "Failed uploading image: $exception")
+                }
+            })
+        }else{
+            Log.d(TAG, "KEY OF BUMP NULL")
+        }
+    }
+
+    private fun validaetForm(): Boolean{
+        var valid = true
+
+        if(currentLocationmarker == null){
+            valid = false
+        }
+        if(TextUtils.isEmpty(binding.sizeSpinner.selectedItem.toString())){
+            valid = false
+        }
+        if(localPhoto == null){
+            valid = false
+        }
+
+        return valid
     }
 
     //LISTENNER DE BUSQUEDA DE UBICACION
@@ -205,8 +334,8 @@ class RegisterBumpActivity : AppCompatActivity() {
                                 val addressResult = addresses[0]
                                 val position = GeoPoint(addressResult.latitude, addressResult.longitude)
 
-                                Log.i("Geocoder: REGISTER BUMP", "Dirección encontrada: ${addressResult.getAddressLine(0)}")
-                                Log.i("Geocoder REGISTER BUMP", "Latitud: ${addressResult.latitude}, Longitud: ${addressResult.longitude}")
+                                Log.i(TAG_LOCATION, "Dirección encontrada: ${addressResult.getAddressLine(0)}")
+                                Log.i(TAG_LOCATION, "Latitud: ${addressResult.latitude}, Longitud: ${addressResult.longitude}")
                                 binding.location.hint = addressResult.getAddressLine(0)
 
                                 //Agregar Marcador al mapa
@@ -216,7 +345,7 @@ class RegisterBumpActivity : AppCompatActivity() {
                                 map!!.controller.setCenter(currentLocationmarker!!.position)
 
                             } else {
-                                Log.i("Geocoder: REGISTER BUMP", "Dirección no encontrada:" + addressString)
+                                Log.i(TAG_LOCATION, "Dirección no encontrada:" + addressString)
                                 Toast.makeText(this, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -314,7 +443,56 @@ class RegisterBumpActivity : AppCompatActivity() {
             }
         }
     }
-
+    private fun takePic() {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                    null
+                }
+                photoFile?.also {
+                    photoUri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.citycrater.FileProvider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE)
+                }
+            } else {
+                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "No hay permiso de cámara", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA), Permission.MY_PERMISSION_REQUEST_CAMERA)
+        }
+    }
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            DataBase.BUMP_REGISTERED_IMAGE_NAME, /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        )
+    }
+    fun selectPhoto () {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val pickImage = Intent(Intent.ACTION_PICK)
+            pickImage.type = "image/*"
+            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
+        } else {
+            Toast.makeText(this, "No hay permiso de galeria", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                Permission.MY_PERMISSION_REQUEST_GALLERY)
+        }
+    }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
@@ -325,29 +503,22 @@ class RegisterBumpActivity : AppCompatActivity() {
                         val selectedImageUri = data!!.data
                         if(data.data != null){
                             binding.imgBump.setImageURI(selectedImageUri)
+                            localPhoto = selectedImageUri
                         }
                     } catch (e: FileNotFoundException){
                         e.printStackTrace()
                     }
                 }
             }
-            Permission.REQUEST_IMAGE_CAPTURE ->{
-                if (requestCode == Permission.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-                    val imageBitmap = data?.extras?.get("data") as Bitmap
-                    binding.imgBump.setImageBitmap(imageBitmap)
-
-                    //guardar
-                    val imageUri = saveImageToGallery(imageBitmap)
-                    if (imageUri != null) {
-                        Toast.makeText(this, "Imagen guardada en la galería", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Error al guardar la imagen", Toast.LENGTH_SHORT).show()
-                    }
+            Permission.REQUEST_IMAGE_CAPTURE -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    // Load the full-quality image into ImageView
+                    localPhoto = photoUri
+                    binding.imgBump.setImageURI(photoUri)
                 }
             }
         }
     }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -376,56 +547,4 @@ class RegisterBumpActivity : AppCompatActivity() {
         }
     }
 
-    private fun takePic(){
-        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-        val takePictureIntent =  Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE);
-            } else {
-                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "No hay permiso de camara", Toast.LENGTH_SHORT).show()
-            requestPermissions(arrayOf(android.Manifest.permission.CAMERA),
-                Permission.MY_PERMISSION_REQUEST_CAMERA)
-        }
-    }
-
-    fun selectPhoto () {
-        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            val pickImage = Intent(Intent.ACTION_PICK)
-            pickImage.type = "image/*"
-            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
-        } else {
-            Toast.makeText(this, "No hay permiso de galeria", Toast.LENGTH_SHORT).show()
-            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                Permission.MY_PERMISSION_REQUEST_GALLERY)
-        }
-    }
-
-    fun saveImageToGallery(bitmap: Bitmap): Uri? {
-        val values = ContentValues()
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, "Imagen_${System.currentTimeMillis()}")
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/Camera") // <-- Change this line
-
-        val resolver = contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-
-        if (uri != null) {
-            try {
-                val outStream = resolver.openOutputStream(uri)
-                if (outStream != null) {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
-                }
-                outStream?.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return null
-            }
-        }
-        return uri
-    }
 }

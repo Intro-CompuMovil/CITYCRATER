@@ -17,15 +17,22 @@ import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityMapBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
+import com.example.citycrater.model.Bump
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import org.json.JSONObject
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
 import org.osmdroid.bonuspack.routing.RoadManager
@@ -70,6 +77,14 @@ class MapActivity : AppCompatActivity() {
 
     //GEOCODER
     var mGeocoder: Geocoder? = null
+
+    //DATABASE
+    private val database = FirebaseDatabase.getInstance()
+    private lateinit var bumpsRef: DatabaseReference
+    private lateinit var childEventListener: ChildEventListener
+
+    val TAG = "REGISTER_BUMP"
+    val TAG_LOCATION = "LOCATION"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,31 +137,58 @@ class MapActivity : AppCompatActivity() {
             }
         }
 
+        //READ FROM DB ANT LISTEN
+        listenForBumps()
+    }
 
-        var bumpLocations: List<Pair<Double, Double>> = readJsonPairs("BumpLocations.json")
-        if(bumpLocations.isNotEmpty()){
-            bumpLocations.forEachIndexed { index, bumpLocation ->
-                val (x, y) = bumpLocation
-                bumpLocationMarker = createMarkerRetMark(GeoPoint(x, y), "null", null, R.drawable.baseline_location_pin_25)
-                bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
-                    val intent = Intent(this, ReportFixedActivity::class.java)
-                    intent.putExtra("latitude", x.toString())
-                    intent.putExtra("longitude", y.toString())
-                    startActivity(intent)
-                    true
+    private fun listenForBumps() {
+        bumpsRef = database.getReference(DataBase.PATH_BUMPS)
+
+        childEventListener = object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val newBump = dataSnapshot.getValue(Bump::class.java)
+                if (newBump != null) {
+                    Log.d(TAG, "New bump: ${newBump.latitude}, ${newBump.longitude}, ${newBump.size}")
+                    // TODO: Update your UI here with the new bump
+                    bumpLocationMarker = createMarkerRetMark(GeoPoint(newBump.latitude, newBump.longitude), "Size: ${newBump.size}", null, R.drawable.baseline_location_pin_25)
+                    bumpLocationMarker.let { map!!.overlays.add(it) }
                 }
-                bumpLocationMarker?.let { map!!.overlays.add(it) }
+            }
 
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val changedBump = dataSnapshot.getValue(Bump::class.java)
+                if (changedBump != null) {
+                    Log.d(TAG, "Changed bump: ${changedBump.latitude}, ${changedBump.longitude}, ${changedBump.size}")
+                    // TODO: Update your UI here with the changed bump
+                }
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                val removedBump = dataSnapshot.getValue(Bump::class.java)
+                if (removedBump != null) {
+                    Log.d(TAG, "Removed bump: ${removedBump.latitude}, ${removedBump.longitude}, ${removedBump.size}")
+                    // TODO: Update your UI here to remove the bump
+                }
+            }
+
+            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // This method is triggered when a child location's priority changes
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.w(TAG, "Failed to read value: $databaseError")
             }
         }
 
-
+        bumpsRef.addChildEventListener(childEventListener)
     }
+
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
         map!!.onPause()
         mSensorManager.unregisterListener(mLightSensorListener)
+        bumpsRef.removeEventListener(childEventListener)
     }
 
     private fun stopLocationUpdates() {
