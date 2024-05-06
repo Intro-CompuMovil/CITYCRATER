@@ -10,20 +10,33 @@ class UserSessionManager {
     companion object{
         const val DRIVER = "Driver"
         const val ADMIN = "Admin"
-        lateinit var CURRENT: String
-        const val PATH_USERS="users/"
+        var CURRENT: String = ""
 
         fun setUserView (button: ImageButton): Boolean{
-            if(UserSessionManager.CURRENT == UserSessionManager.DRIVER){
+            if(CURRENT == DRIVER){
                 button.isEnabled = false
                 button.setVisibility(View.GONE)
                 return false
-            }else if (UserSessionManager.CURRENT == UserSessionManager.ADMIN){
+            }else if (CURRENT == ADMIN){
                 button.isEnabled = true
                 button.setVisibility(View.VISIBLE)
                 return true
             }
             return false
+        }
+
+        fun validateEmail(email: String): Boolean{
+            if (!email.contains("@") ||
+                !email.contains(".") ||
+                email.length < 5)
+                return false
+            return true
+        }
+
+        fun validatePassword(password: String): Boolean{
+            if (password.length < 8)
+                return false
+            return true
         }
     }
 }

@@ -61,6 +61,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/absolute_round_corner"
                     android:backgroundTint="@color/white"
+                    android:paddingStart="10dp"
                     android:layout_toEndOf="@id/username"/>
 
             </RelativeLayout>
@@ -86,6 +87,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/absolute_round_corner"
                     android:backgroundTint="@color/white"
+                    android:paddingStart="10dp"
                     android:layout_toEndOf="@id/password"/>
 
             </RelativeLayout>

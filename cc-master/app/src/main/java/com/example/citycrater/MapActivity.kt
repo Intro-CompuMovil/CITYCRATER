@@ -102,8 +102,6 @@ class MapActivity : AppCompatActivity() {
         super.onResume()
         map!!.onResume()
 
-
-
         mSensorManager.registerListener(mLightSensorListener, mLightSensor,
             SensorManager.SENSOR_DELAY_NORMAL)
 
@@ -483,7 +481,6 @@ class MapActivity : AppCompatActivity() {
             roadOverlay = null
         }
     }
-
 
     fun readJsonPairs(fileName: String): List<Pair<Double, Double>> {
         val inputStream = assets.open(fileName)

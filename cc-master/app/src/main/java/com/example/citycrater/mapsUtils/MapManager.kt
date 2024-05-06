@@ -2,13 +2,10 @@ package com.example.citycrater.mapsUtils
 
 import android.app.Activity
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.io.FileReader
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
