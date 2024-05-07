@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
+            UserSessionManager.CURRENT = currentUser.uid
             val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
         }

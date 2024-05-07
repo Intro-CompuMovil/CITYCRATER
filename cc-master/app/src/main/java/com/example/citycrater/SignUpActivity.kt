@@ -74,11 +74,7 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
         val database = FirebaseDatabase.getInstance().reference
         var userRef: DatabaseReference
 
-        if(UserSessionManager.CURRENT == UserSessionManager.DRIVER){
-            userRef = database.child(DataBase.PATH_USERS_DRIVERS).child(user.uid)
-        } else {
-            userRef = database.child(DataBase.PATH_USERS_ADMINS).child(user.uid)
-        }
+        userRef = database.child(DataBase.PATH_USERS).child(user.uid)
 
         val userToSave = User(binding.name.text.toString(),
             binding.email.text.toString(),

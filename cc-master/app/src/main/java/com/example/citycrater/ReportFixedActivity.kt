@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -15,20 +16,29 @@ import android.hardware.SensorManager
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.os.StrictMode
 import android.provider.MediaStore
+import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityHomeBinding
 import com.example.citycrater.databinding.ActivityReportFixedBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
+import com.example.citycrater.model.FixedBump
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.UploadTask
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -39,6 +49,7 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 
 class ReportFixedActivity : AppCompatActivity() {
     lateinit var binding: ActivityReportFixedBinding
@@ -47,8 +58,8 @@ class ReportFixedActivity : AppCompatActivity() {
     private var map : MapView? = null
     private var currentLocationmarker: Marker? = null
     private lateinit var point: GeoPoint
-    private var latitude: Double = 0.0
-    private var longitude: Double = 0.0
+    private var latitude: Double = Double.POSITIVE_INFINITY
+    private var longitude: Double = Double.POSITIVE_INFINITY
     private var key = ""
     private var size = ""
 
@@ -58,6 +69,16 @@ class ReportFixedActivity : AppCompatActivity() {
     private lateinit var mLightSensorListener: SensorEventListener
     private var darkModeLum: Boolean = false
     private var lightModeLum: Boolean = true
+
+    //PHOTO
+    private lateinit var photoUri: Uri
+    var localPhoto: Uri? = null
+    var url: String = ""
+
+    //DATABASE
+    private val database = FirebaseDatabase.getInstance()
+    private lateinit var myRef: DatabaseReference
+    val TAG = "REGISTER_BUMP"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -226,6 +247,96 @@ class ReportFixedActivity : AppCompatActivity() {
         binding.btnGallery.setOnClickListener {
             permisoGaleria()
         }
+
+        //revisar si ya fue reportado: Si sí (inhabilitar boton y ocultar)
+        binding.btnRegisterBump.setOnClickListener {
+            registerFixedBump()
+        }
+    }
+
+    private fun registerFixedBump(){
+        //revisar campos
+        if(validateForm()){
+            if(sameImage()){
+                //revisar si la imagen es la misma
+                Toast.makeText(this, "LAS IMAGENES SON IGUALES", Toast.LENGTH_SHORT).show()
+            }else{
+                //registrar reporte de reparacion en la bd
+                val newFixReport = FixedBump(key, UserSessionManager.CURRENT, size, latitude, longitude)
+                myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
+                val keyFixedRport = myRef.push().key
+                myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyFixedRport)
+
+                myRef.setValue(newFixReport)
+                    .addOnSuccessListener {
+                        saveImage(keyFixedRport)
+                        Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.w(TAG, "Failed to save bump: $exception")
+                    }
+            }
+
+        }else{
+            Toast.makeText(this, "FALTAN DATOS", Toast.LENGTH_SHORT).show()
+        }
+
+
+    }
+
+    private fun saveImage(keyFixedReport: String?){
+        if(key != null){
+            //referencia de la imagen en la bd
+            val storageRef = FirebaseStorage.getInstance().reference
+            val imagesRef = storageRef.child(DataBase.PATH_BUMPS + key)
+
+            // Crea una referencia única para la imagen (por ejemplo, usando el timestamp actual)
+            val imageName = DataBase.BUMP_FIXED_IMAGE_NAME + "_${keyFixedReport}.jpg"
+            val imageRef = imagesRef.child(imageName)
+
+            // Sube la imagen al Firebase Storage
+            imageRef.putFile(localPhoto!!).addOnSuccessListener(object :
+                OnSuccessListener<UploadTask.TaskSnapshot> {
+                override fun onSuccess(taskSnapshot: UploadTask.TaskSnapshot) {
+                    Log.d(TAG, "Successfully uploaded image, REGISTER OF FIXED BUMP COMPLETED")
+                    Toast.makeText(baseContext, "Fixed bump reported successfully", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(baseContext, MapActivity::class.java))
+                }
+            }).addOnFailureListener(object : OnFailureListener {
+                override fun onFailure(exception: Exception) {
+                    // Handle unsuccessful uploads
+                    Log.w(TAG, "Failed uploading image: $exception")
+                }
+            })
+        }else{
+            Log.d(TAG, "KEY OF BUMP NULL")
+        }
+    }
+
+    private fun sameImage(): Boolean{
+        val drawable1 = binding.imgBumpBefore.drawable as BitmapDrawable
+        val drawable2 = binding.imgBumpAfter.drawable as BitmapDrawable
+
+        val bitmap1 = drawable1.bitmap
+        val bitmap2 = drawable2.bitmap
+
+        return bitmap1.sameAs(bitmap2)
+    }
+    private fun validateForm(): Boolean{
+        var valid = true
+        if(TextUtils.isEmpty(size)){
+            valid = false
+        }
+        if(latitude.isInfinite()){
+            valid = false
+        }
+        if(longitude.isInfinite()){
+            valid = false
+        }
+        if(localPhoto == null){
+            valid = false
+        }
+        return valid
     }
 
     //FUNCIONES DE LAS IMAGENES
@@ -274,7 +385,56 @@ class ReportFixedActivity : AppCompatActivity() {
             }
         }
     }
-
+    private fun takePic() {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                    null
+                }
+                photoFile?.also {
+                    photoUri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.citycrater.FileProvider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE)
+                }
+            } else {
+                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "No hay permiso de cámara", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA), Permission.MY_PERMISSION_REQUEST_CAMERA)
+        }
+    }
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            DataBase.BUMP_FIXED_IMAGE_NAME, /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        )
+    }
+    fun selectPhoto () {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val pickImage = Intent(Intent.ACTION_PICK)
+            pickImage.type = "image/*"
+            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
+        } else {
+            Toast.makeText(this, "No hay permiso de galeria", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                Permission.MY_PERMISSION_REQUEST_GALLERY)
+        }
+    }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
@@ -285,29 +445,22 @@ class ReportFixedActivity : AppCompatActivity() {
                         val selectedImageUri = data!!.data
                         if(data.data != null){
                             binding.imgBumpAfter.setImageURI(selectedImageUri)
+                            localPhoto = selectedImageUri
                         }
                     } catch (e: FileNotFoundException){
                         e.printStackTrace()
                     }
                 }
             }
-            Permission.REQUEST_IMAGE_CAPTURE ->{
-                if (requestCode == Permission.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-                    val imageBitmap = data?.extras?.get("data") as Bitmap
-                    binding.imgBumpAfter.setImageBitmap(imageBitmap)
-
-                    //guardar
-                    val imageUri = saveImageToGallery(imageBitmap)
-                    if (imageUri != null) {
-                        Toast.makeText(this, "Imagen guardada en la galería", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Error al guardar la imagen", Toast.LENGTH_SHORT).show()
-                    }
+            Permission.REQUEST_IMAGE_CAPTURE -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    // Load the full-quality image into ImageView
+                    localPhoto = photoUri
+                    binding.imgBumpAfter.setImageURI(photoUri)
                 }
             }
         }
     }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -334,59 +487,6 @@ class ReportFixedActivity : AppCompatActivity() {
                 // Ignore all other requests.
             }
         }
-    }
-
-    private fun takePic(){
-        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-        val takePictureIntent =  Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE);
-            } else {
-                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "No hay permiso de camara", Toast.LENGTH_SHORT).show()
-            requestPermissions(arrayOf(android.Manifest.permission.CAMERA),
-                Permission.MY_PERMISSION_REQUEST_CAMERA)
-        }
-    }
-
-    fun selectPhoto () {
-        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            val pickImage = Intent(Intent.ACTION_PICK)
-            pickImage.type = "image/*"
-            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
-        } else {
-            Toast.makeText(this, "No hay permiso de galeria", Toast.LENGTH_SHORT).show()
-            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                Permission.MY_PERMISSION_REQUEST_GALLERY)
-        }
-    }
-
-    fun saveImageToGallery(bitmap: Bitmap): Uri? {
-        val values = ContentValues()
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, "Imagen_${System.currentTimeMillis()}")
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/Camera") // <-- Change this line
-
-        val resolver = contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-
-        if (uri != null) {
-            try {
-                val outStream = resolver.openOutputStream(uri)
-                if (outStream != null) {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
-                }
-                outStream?.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return null
-            }
-        }
-        return uri
     }
 
     //FUNCIONES RELACIONADAS CON EL MAPA
