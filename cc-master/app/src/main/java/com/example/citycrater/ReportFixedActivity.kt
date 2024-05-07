@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -16,15 +17,18 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.StrictMode
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityHomeBinding
 import com.example.citycrater.databinding.ActivityReportFixedBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
+import com.google.firebase.storage.FirebaseStorage
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -33,6 +37,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
+import java.io.File
 import java.io.FileNotFoundException
 
 class ReportFixedActivity : AppCompatActivity() {
@@ -44,6 +49,8 @@ class ReportFixedActivity : AppCompatActivity() {
     private lateinit var point: GeoPoint
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var key = ""
+    private var size = ""
 
     //SENSORES
     private lateinit var mSensorManager: SensorManager
@@ -86,10 +93,19 @@ class ReportFixedActivity : AppCompatActivity() {
         val intent = this.intent
         latitude = intent.getStringExtra("latitude")!!.toDouble()
         longitude = intent.getStringExtra("longitude")!!.toDouble()
+        size = intent.getStringExtra("size")!!
+        key = intent.getStringExtra("key")!!
+
+        Toast.makeText(this, key, Toast.LENGTH_SHORT).show()
+
         val direccion = MapManager.getAddressFromCoordinates(latitude, longitude)
         point = GeoPoint(latitude, longitude)
 
-        binding.location.text = "Hueco reparado en: " + longitude + "  ;  "  + latitude
+        binding.location.text = longitude.toString() + "  ;  "  + latitude.toString()
+        binding.size.text = size
+
+        //image
+        downloadFile()
 
         map!!.onResume()
 
@@ -103,6 +119,25 @@ class ReportFixedActivity : AppCompatActivity() {
         mapController.setCenter(point);
 
     }
+
+    private fun downloadFile() {
+        val storage = FirebaseStorage.getInstance()
+        val imageRef = storage.reference.child("${DataBase.PATH_BUMPS}/${key}/${DataBase.BUMP_REGISTERED_IMAGE_NAME}_${key}.jpg")
+
+        val localFile = File.createTempFile("bumps_${key}", "jpg")
+        imageRef.getFile(localFile)
+            .addOnSuccessListener { taskSnapshot ->
+                // Descarga exitosa del archivo
+                val bitmap = BitmapFactory.decodeFile(localFile.absolutePath)
+                binding.imgBumpBefore.setImageBitmap(bitmap) // Establecer la imagen en el ImageView
+                Log.i("FBApp", "Descargado exitosamente")
+            }
+            .addOnFailureListener { exception ->
+                // Manejar la falla en la descarga
+                Log.e("FBApp", "Error al descargar el archivo", exception)
+            }
+    }
+
     override fun onPause() {
         super.onPause()
         map!!.onPause()

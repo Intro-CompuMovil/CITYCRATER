@@ -152,6 +152,22 @@ class MapActivity : AppCompatActivity() {
                     // TODO: Update your UI here with the new bump
                     bumpLocationMarker = createMarkerRetMark(GeoPoint(newBump.latitude, newBump.longitude), "Size: ${newBump.size}", null, R.drawable.baseline_location_pin_25)
                     bumpLocationMarker.let { map!!.overlays.add(it) }
+
+                    // Create local variables for the latitude, longitude, and key
+                    val latitude = newBump.latitude.toString()
+                    val longitude = newBump.longitude.toString()
+                    val size = newBump.size
+                    val key = dataSnapshot.key
+
+                    bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
+                        val intent = Intent(baseContext, ReportFixedActivity::class.java)
+                        intent.putExtra("latitude", latitude)
+                        intent.putExtra("longitude", longitude)
+                        intent.putExtra("size", size)
+                        intent.putExtra("key", key)
+                        startActivity(intent)
+                        true
+                    }
                 }
             }
 
