@@ -37,6 +37,7 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
         binding.btnSign.setOnClickListener {
             signUp()
         }
+
     }
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -67,6 +68,7 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
                 }
         }else{
             Toast.makeText(this, "Incorrect fields.", Toast.LENGTH_SHORT).show()
+            Log.i("VALIDATE", validateForm().toString())
         }
     }
 

@@ -28,7 +28,7 @@ class LoginActivity : AppCompatActivity() {
         auth = Firebase.auth
 
         binding.btnLog.setOnClickListener {
-            signInUser(binding.username.text.toString(), binding.password.text.toString())
+            signInUser(binding.txtUsername.text.toString(), binding.txtPassword.text.toString())
         }
     }
 
@@ -39,8 +39,12 @@ class LoginActivity : AppCompatActivity() {
         updateUI(currentUser)
     }
 
+
+
     private fun signInUser(email: String, password: String){
-        if(validateForm()){
+
+        if(validateForm() && isEmailValid(email)){
+            Toast.makeText(this, "HOLA", Toast.LENGTH_SHORT).show()
             auth.signInWithEmailAndPassword(email,password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
@@ -70,6 +74,14 @@ class LoginActivity : AppCompatActivity() {
             binding.txtPassword.error = null
         }
         return valid
+    }
+
+    private fun isEmailValid(email: String): Boolean {
+        if (!email.contains("@") ||
+            !email.contains(".") ||
+            email.length < 5)
+            return false
+        return true
     }
 
     private fun updateUI(currentUser: FirebaseUser?) {

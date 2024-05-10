@@ -51,7 +51,7 @@
                     android:id="@+id/username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/usernametitle"
+                    android:text="@string/emailTitle"
                     android:layout_marginEnd="20dp"
                     android:layout_centerVertical="true"/>
 

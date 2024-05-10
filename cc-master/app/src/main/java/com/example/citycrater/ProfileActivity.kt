@@ -2,32 +2,59 @@ package com.example.citycrater
 
 import android.app.Activity
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.example.citycrater.databinding.ActivityProfileBinding
 import com.example.citycrater.databinding.ActivityRegisterBumpBinding
+import com.example.citycrater.model.User
 import com.example.citycrater.permissions.Permission
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.UploadTask
+import com.google.firebase.storage.storage
+import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ProfileActivity : AppCompatActivity() {
 
     private  var auth: FirebaseAuth = Firebase.auth
 
     lateinit var binding: ActivityProfileBinding
+
+    private var photoUri: Uri? = null
+
+    private val database = FirebaseDatabase.getInstance()
+
+    private lateinit var myRef: DatabaseReference
+
+    private val storage = Firebase.storage
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,6 +63,9 @@ class ProfileActivity : AppCompatActivity() {
 
         //LISTENNERS DE LA PANTALLA
         setlistenners()
+
+        //CAMPOS DE LA PANTALLA
+        setFields()
 
     }
 
@@ -52,12 +82,36 @@ class ProfileActivity : AppCompatActivity() {
         binding.btnLogout.setOnClickListener(){
             logOut()
         }
+        binding.btnUpdateUser.setOnClickListener(){
+            //saveuser
+            updateUser()
+        }
     }
 
     fun setFields (){
 
-        //val db = FirebaseDatabase.getInstance().reference.child("users/drivers")
-        //QUE EN FIREBASE NO SE CREE UNA CARPETA DISTINTA PARA DRIVER Y ADMIN, UNA SOLA DE USER DADO QUE HAY UN CAMPO QUE INDICA SI ES DRIVER OA ADMIN
+        val db = database.getReference("users/${auth.currentUser!!.uid}")
+        var userObject: User? = null
+        Log.i("PATH", "users/${auth.currentUser!!.uid}")
+
+        db.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                userObject = dataSnapshot.getValue(User::class.java)
+                binding.name.hint = userObject!!.name
+                binding.email.hint = userObject!!.email
+                binding.phone.hint = userObject!!.phone
+
+                if(userObject!!.photo.isNotEmpty()){
+                    downloadFile()
+                }
+
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                Log.w(TAG, "loadUser:onCancelled", databaseError.toException())
+            }
+        })
 
     }
 
@@ -118,19 +172,24 @@ class ProfileActivity : AppCompatActivity() {
                         val selectedImageUri = data!!.data
                         if(data.data != null){
                             binding.imgProfile.setImageURI(selectedImageUri)
+                            //guardar
+
+                            if (selectedImageUri != null) {
+                                photoUri = selectedImageUri
+                            }
+
+
                         }
                     } catch (e: FileNotFoundException){
                         e.printStackTrace()
                     }
                 }
             }
-            Permission.REQUEST_IMAGE_CAPTURE ->{
-                if (requestCode == Permission.REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-                    val imageBitmap = data?.extras?.get("data") as Bitmap
-                    binding.imgProfile.setImageBitmap(imageBitmap)
-
-                    //guardar
-                    val imageUri = saveImageToGallery(imageBitmap)
+            Permission.REQUEST_IMAGE_CAPTURE -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    // Load the full-quality image into ImageView
+                    binding.imgProfile.setImageURI(photoUri)
+                    val imageUri = saveImageToGallery(MediaStore.Images.Media.getBitmap(contentResolver, photoUri))
                     if (imageUri != null) {
                         Toast.makeText(this, "Imagen guardada en la galería", Toast.LENGTH_SHORT).show()
                     } else {
@@ -169,19 +228,32 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    private fun takePic(){
+    private fun takePic() {
         val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-        val takePictureIntent =  Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE);
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                    null
+                }
+                photoFile?.also {
+                    photoUri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.citycrater.FileProvider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    startActivityForResult(takePictureIntent, Permission.REQUEST_IMAGE_CAPTURE)
+                }
             } else {
-                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No hay una cámara disponible en este dispositivo", Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(this, "No hay permiso de camara", Toast.LENGTH_SHORT).show()
-            requestPermissions(arrayOf(android.Manifest.permission.CAMERA),
-                Permission.MY_PERMISSION_REQUEST_CAMERA)
+            Toast.makeText(this, "No hay permiso de cámara", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA), Permission.MY_PERMISSION_REQUEST_CAMERA)
         }
     }
 
@@ -222,10 +294,92 @@ class ProfileActivity : AppCompatActivity() {
         return uri
     }
 
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            "JPEG_${timeStamp}_", /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        )
+    }
+
+    private fun uploadFileFromUri(imgUri: Uri) {
+        val file = imgUri
+        val imageRef = storage.reference.child("users/profile/${auth.currentUser!!.uid}/image.jpg")
+        imageRef.putFile(file)
+            .addOnSuccessListener(object : OnSuccessListener<UploadTask.TaskSnapshot> {
+                override fun onSuccess(taskSnapshot: UploadTask.TaskSnapshot) {
+// Get a URL to the uploaded content
+                    Log.i("FBApp", "Successfully uploaded image")
+                }
+            })
+            .addOnFailureListener(object : OnFailureListener {
+                override fun onFailure(exception: Exception) {
+// Handle unsuccessful uploads
+// ...
+                }
+            })
+    }
+
+
     fun logOut(){
         auth.signOut()
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
     }
+
+    fun updateUser(){
+        //Agregar datos a realtime Database
+        var userObject : User? = User()
+        myRef = database.getReference("users/${auth.currentUser!!.uid}")
+        val db = database.getReference("users/${auth.currentUser!!.uid}")
+        db.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                userObject = dataSnapshot.getValue(User::class.java)
+                if(photoUri != null){
+                    uploadFileFromUri(photoUri!!)
+                    userObject!!.photo = "users/profile/${auth.currentUser!!.uid}/image.jpg"
+                }
+                if(binding.name.text.isNotEmpty()){
+                    userObject!!.name = binding.name.text.toString()
+                }
+                if(binding.phone.text.isNotEmpty()){
+                    userObject!!.phone = binding.phone.text.toString()
+                }
+                //LOGICA CAMBIO EMAIL Y CONTRASEÑA
+                Log.i("LONGNAME", binding.name.text.isNotEmpty().toString())
+                Log.i("LONGEMAIL", binding.email.text.isEmpty().toString())
+
+                myRef.setValue(userObject)
+            }
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                Log.w(TAG, "loadUser:onCancelled", databaseError.toException())
+            }
+        })
+
+    }
+
+    private fun downloadFile() {
+
+        val localFile = File.createTempFile("images", "jpg")
+        val imageRef = storage.reference.child("users/profile/${auth.currentUser!!.uid}/image.jpg")
+        imageRef.getFile(localFile)
+            .addOnSuccessListener { taskSnapshot ->
+// Successfully downloaded data to local file
+//...
+                Log.i("FBApp", "succesfully downloaded")
+                binding.imgProfile.setImageURI(Uri.fromFile(localFile))
+// Update UI using the localFile
+            }.addOnFailureListener { exception ->
+// Handle failed download
+// ...
+            }
+    }
+
+
 
 }
