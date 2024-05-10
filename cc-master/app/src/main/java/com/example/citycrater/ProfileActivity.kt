@@ -22,6 +22,7 @@ import com.example.citycrater.databinding.ActivityProfileBinding
 import com.example.citycrater.databinding.ActivityRegisterBumpBinding
 import com.example.citycrater.model.User
 import com.example.citycrater.permissions.Permission
+import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.Firebase
@@ -349,6 +350,30 @@ class ProfileActivity : AppCompatActivity() {
                 if(binding.phone.text.isNotEmpty()){
                     userObject!!.phone = binding.phone.text.toString()
                 }
+                if(binding.email.text.isNotEmpty()){
+                    if(UserSessionManager.validateEmail(binding.email.text.toString())){
+                        auth.currentUser!!.updateEmail(binding.email.text.toString())
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    userObject!!.email = binding.email.text.toString()
+                                    Log.d(TAG, "User email address updated.")
+                                }
+                            }
+                    }else{
+                        Toast.makeText(baseContext, "Correo invalido", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                if(binding.txtPassword.text.isNotEmpty()){
+                    if(UserSessionManager.validatePassword(binding.txtPassword.text.toString())){
+                        auth.currentUser!!.updatePassword(binding.txtPassword.text.toString())
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    userObject!!.password = binding.txtPassword.text.toString()
+                                    Log.d(TAG, "User password updated.")
+                                }
+                            }
+                    }
+                }
                 //LOGICA CAMBIO EMAIL Y CONTRASEÑA
                 Log.i("LONGNAME", binding.name.text.isNotEmpty().toString())
                 Log.i("LONGEMAIL", binding.email.text.isEmpty().toString())
@@ -379,6 +404,20 @@ class ProfileActivity : AppCompatActivity() {
 // ...
             }
     }
+    private fun isEmailValid(email: String): Boolean {
+        if (!email.contains("@") ||
+            !email.contains(".") ||
+            email.length < 5)
+            return false
+        return true
+    }
+
+    fun validatePassword(password: String): Boolean{
+        if (password.length < 8)
+            return false
+        return true
+    }
+
 
 
 
