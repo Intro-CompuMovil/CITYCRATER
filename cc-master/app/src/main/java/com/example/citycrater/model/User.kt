@@ -8,8 +8,6 @@ class User {
     var usertype: String = ""
     var photo: String = ""
 
-    constructor() // Constructor sin argumentos
-
     constructor() {
         this.name = ""
         this.email = ""

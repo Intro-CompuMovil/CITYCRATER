@@ -336,7 +336,7 @@ class ProfileActivity : AppCompatActivity() {
 
     fun updateUser(){
         //Agregar datos a realtime Database
-        var userObject : User? = User()
+        var userObject : User?
         myRef = database.getReference("users/${auth.currentUser!!.uid}")
         val db = database.getReference("users/${auth.currentUser!!.uid}")
         db.addListenerForSingleValueEvent(object : ValueEventListener {
