@@ -5,19 +5,21 @@ import android.view.View
 import android.widget.ImageButton
 import androidx.core.content.ContextCompat.startActivity
 import com.example.citycrater.RequestsActivity
+import com.example.citycrater.model.User
 
 class UserSessionManager {
     companion object{
         const val DRIVER = "Driver"
         const val ADMIN = "Admin"
-        var CURRENT: String = ""
+        lateinit var CURRENT: User
+        lateinit var CURRENT_UID: String
 
-        fun setUserView (button: ImageButton): Boolean{
-            if(CURRENT == DRIVER){
+        fun setAdminReportsView (button: ImageButton): Boolean{
+            if(CURRENT.usertype == DRIVER){
                 button.isEnabled = false
                 button.setVisibility(View.GONE)
                 return false
-            }else if (CURRENT == ADMIN){
+            }else if (CURRENT.usertype == ADMIN){
                 button.isEnabled = true
                 button.setVisibility(View.VISIBLE)
                 return true

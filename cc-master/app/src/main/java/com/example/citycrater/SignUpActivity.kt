@@ -16,8 +16,11 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 
 class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener {
@@ -80,7 +83,7 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
             binding.email.text.toString(),
             binding.phone.text.toString(),
             binding.txtPassword.text.toString(),
-            UserSessionManager.CURRENT)
+            UserSessionManager.CURRENT.usertype)
 
         userRef.setValue(userToSave)
             .addOnSuccessListener {
@@ -95,7 +98,28 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
 
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
-            startActivity(Intent(this, HomeActivity::class.java))
+            val database = FirebaseDatabase.getInstance()
+            val userRef = database.getReference(DataBase.PATH_USERS).child(currentUser.uid)
+
+            userRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val user = snapshot.getValue(User::class.java)
+                        if (user != null) {
+                            UserSessionManager.CURRENT = user
+                            UserSessionManager.CURRENT_UID = currentUser.uid
+                            val intent = Intent(this@SignUpActivity, HomeActivity::class.java)
+                            startActivity(intent)
+                        }
+                    } else {
+                        Log.w(TAG, "User data not found")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w(TAG, "Failed to read user data", error.toException())
+                }
+            })
         }
     }
     private fun validateForm(): Boolean{
@@ -127,14 +151,6 @@ class SignUpActivity : AppCompatActivity(),  AdapterView.OnItemSelectedListener 
             valid = false
         } else {
             binding.txtPassword.error = null
-        }
-
-        if(binding.userType.selectedItem.toString() == UserSessionManager.ADMIN){
-            UserSessionManager.CURRENT = UserSessionManager.ADMIN
-        }else if (binding.userType.selectedItem.toString() == UserSessionManager.DRIVER){
-            UserSessionManager.CURRENT = UserSessionManager.DRIVER
-        }else{
-            Toast.makeText(this, "Selection required.", Toast.LENGTH_SHORT).show()
         }
 
         return valid

@@ -91,7 +91,7 @@ class ReportFixedActivity : AppCompatActivity() {
         Configuration.getInstance().setUserAgentValue("com.example.citycrater")
 
         //vista de admin
-        if(UserSessionManager.setUserView(binding.btnReports)){
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
             binding.btnReports.setOnClickListener {
                 val intent = Intent(this, RequestsActivity::class.java)
                 startActivity(intent)
@@ -262,7 +262,7 @@ class ReportFixedActivity : AppCompatActivity() {
                 Toast.makeText(this, "LAS IMAGENES SON IGUALES", Toast.LENGTH_SHORT).show()
             }else{
                 //registrar reporte de reparacion en la bd
-                val newFixReport = FixedBump(key, UserSessionManager.CURRENT, size, latitude, longitude)
+                val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
                 myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
                 val keyFixedRport = myRef.push().key
                 myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyFixedRport)

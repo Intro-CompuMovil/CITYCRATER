@@ -7,13 +7,19 @@ import android.text.TextUtils
 import android.widget.Button
 import android.widget.Toast
 import android.util.Log
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityLoginBinding
 import com.example.citycrater.databinding.ActivitySignUpBinding
+import com.example.citycrater.model.User
 import com.example.citycrater.users.UserSessionManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
@@ -25,18 +31,11 @@ class LoginActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        auth = Firebase.auth
+        auth = FirebaseAuth.getInstance()
 
         binding.btnLog.setOnClickListener {
-            signInUser(binding.username.text.toString(), binding.password.text.toString())
+            signInUser(binding.txtUsername.text.toString(), binding.txtPassword.text.toString())
         }
-    }
-
-
-    public override fun onStart() {
-        super.onStart()
-        val currentUser = auth.currentUser
-        updateUI(currentUser)
     }
 
     private fun signInUser(email: String, password: String){
@@ -74,10 +73,28 @@ class LoginActivity : AppCompatActivity() {
 
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-        } else {
-            Toast.makeText(this, "sea seria no existe user", Toast.LENGTH_SHORT).show()
+            val database = FirebaseDatabase.getInstance()
+            val userRef = database.getReference(DataBase.PATH_USERS).child(currentUser.uid)
+
+            userRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val user = snapshot.getValue(User::class.java)
+                        if (user != null) {
+                            UserSessionManager.CURRENT = user
+                            UserSessionManager.CURRENT_UID = currentUser.uid
+                            val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                            startActivity(intent)
+                        }
+                    } else {
+                        Log.w(TAG, "User data not found")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w(TAG, "Failed to read user data", error.toException())
+                }
+            })
         }
     }
 }

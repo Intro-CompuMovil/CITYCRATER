@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.example.citycrater.databinding.ActivityProfileBinding
 import com.example.citycrater.databinding.ActivityRegisterBumpBinding
 import com.example.citycrater.permissions.Permission
+import com.example.citycrater.users.UserSessionManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -33,6 +34,9 @@ class ProfileActivity : AppCompatActivity() {
 
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //SET USER INFO
+        setFields()
 
         //LISTENNERS DE LA PANTALLA
         setlistenners()
@@ -56,9 +60,10 @@ class ProfileActivity : AppCompatActivity() {
 
     fun setFields (){
 
-        //val db = FirebaseDatabase.getInstance().reference.child("users/drivers")
-        //QUE EN FIREBASE NO SE CREE UNA CARPETA DISTINTA PARA DRIVER Y ADMIN, UNA SOLA DE USER DADO QUE HAY UN CAMPO QUE INDICA SI ES DRIVER OA ADMIN
-
+        //TODO LOAD PHOTO
+        binding.name.hint = UserSessionManager.CURRENT.name
+        binding.email.hint = UserSessionManager.CURRENT.email
+        binding.phone.hint = UserSessionManager.CURRENT.phone
     }
 
     //FUNCIONES DE LAS IMAGENES
@@ -225,7 +230,9 @@ class ProfileActivity : AppCompatActivity() {
     fun logOut(){
         auth.signOut()
         val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+        finish()
     }
 
 }

@@ -22,6 +22,7 @@ import com.example.citycrater.databinding.ActivityMapBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.model.Bump
+import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -95,6 +96,14 @@ class MapActivity : AppCompatActivity() {
 
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
 
         //INICIALIZACION DE VARIABLES
         initialize()

@@ -51,9 +51,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
-            UserSessionManager.CURRENT = currentUser.uid
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
+            val database = FirebaseDatabase.getInstance()
+            val userRef = database.getReference(DataBase.PATH_USERS).child(currentUser.uid)
+
+            userRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val user = snapshot.getValue(User::class.java)
+                        if (user != null) {
+                            UserSessionManager.CURRENT = user
+                            UserSessionManager.CURRENT_UID = currentUser.uid
+                            val intent = Intent(this@MainActivity, HomeActivity::class.java)
+                            startActivity(intent)
+                        }
+                    } else {
+                        Log.w(TAG, "User data not found")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w(TAG, "Failed to read user data", error.toException())
+                }
+            })
         }
     }
 }

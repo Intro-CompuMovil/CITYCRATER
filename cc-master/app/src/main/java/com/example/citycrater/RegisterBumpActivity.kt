@@ -105,7 +105,7 @@ class RegisterBumpActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         //vista de admin
-        if(UserSessionManager.setUserView(binding.btnReports)){
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
             binding.btnReports.setOnClickListener {
                 val intent = Intent(this, RequestsActivity::class.java)
                 startActivity(intent)

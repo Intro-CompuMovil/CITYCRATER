@@ -66,7 +66,8 @@ class DetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         //vista de admin
-        if(UserSessionManager.setUserView(binding.btnReports)){
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
             binding.btnReports.setOnClickListener {
                 val intent = Intent(this, RequestsActivity::class.java)
                 startActivity(intent)

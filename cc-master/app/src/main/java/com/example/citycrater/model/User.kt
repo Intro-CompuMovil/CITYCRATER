@@ -8,6 +8,16 @@ class User {
     var usertype: String
     var photo: String
 
+    constructor() {
+        this.name = ""
+        this.email = ""
+        this.phone = ""
+        this.password = ""
+        this.usertype = ""
+        this.photo = ""
+    }
+
+
     constructor(name: String, email: String, phone: String, password: String, usertype: String) {
         this.name = name
         this.email = email
@@ -16,4 +26,6 @@ class User {
         this.usertype = usertype
         this.photo = ""
     }
+
+
 }

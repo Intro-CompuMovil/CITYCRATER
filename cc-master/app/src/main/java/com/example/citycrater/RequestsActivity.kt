@@ -26,14 +26,6 @@ class RequestsActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        //vista de admin
-        if(UserSessionManager.setUserView(binding.btnReports)){
-            binding.btnReports.setOnClickListener {
-                val intent = Intent(this, RequestsActivity::class.java)
-                startActivity(intent)
-            }
-        }
-
         //lista de reparados
         val adapter = ArrayAdapter(this, R.layout.simple_list_item_1, MapManager.buildAdapter(this))
         binding.reqList.adapter = adapter

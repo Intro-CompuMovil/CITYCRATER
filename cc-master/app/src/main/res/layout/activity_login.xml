@@ -85,6 +85,7 @@
                     android:id="@+id/txtPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:inputType="textPassword"
                     android:background="@drawable/absolute_round_corner"
                     android:backgroundTint="@color/white"
                     android:paddingStart="10dp"

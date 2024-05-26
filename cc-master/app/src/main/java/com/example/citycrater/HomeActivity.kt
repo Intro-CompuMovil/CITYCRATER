@@ -22,7 +22,7 @@ class HomeActivity : AppCompatActivity() {
         setContentView(view)
 
         //vista de admin
-        if(UserSessionManager.setUserView(binding.btnReports)){
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
             binding.btnReports.setOnClickListener {
                 val intent = Intent(this, RequestsActivity::class.java)
                 startActivity(intent)
