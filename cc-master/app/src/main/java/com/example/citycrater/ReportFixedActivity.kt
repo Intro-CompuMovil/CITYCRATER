@@ -21,6 +21,7 @@ import android.os.StrictMode
 import android.provider.MediaStore
 import android.text.TextUtils
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -38,6 +39,7 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.UploadTask
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
@@ -128,6 +130,9 @@ class ReportFixedActivity : AppCompatActivity() {
         //image
         downloadFile()
 
+        //fixed image
+        downloadFixedimage()
+
         map!!.onResume()
 
         mSensorManager.registerListener(mLightSensorListener, mLightSensor,
@@ -156,6 +161,38 @@ class ReportFixedActivity : AppCompatActivity() {
             .addOnFailureListener { exception ->
                 // Manejar la falla en la descarga
                 Log.e("FBApp", "Error al descargar el archivo", exception)
+            }
+    }
+
+    private fun downloadFixedimage(){
+        val storage = FirebaseStorage.getInstance()
+        val imageRef = storage.reference.child("${DataBase.PATH_BUMPS}/${key}/${DataBase.BUMP_FIXED_IMAGE_NAME}_${key}.jpg")
+
+        val localFile = File.createTempFile("bumps_${key}", "jpg")
+        imageRef.getFile(localFile)
+            .addOnSuccessListener { taskSnapshot ->
+                // Descarga exitosa del archivo
+                val bitmap = BitmapFactory.decodeFile(localFile.absolutePath)
+                binding.btnRegisterBump.isEnabled = false
+                binding.btnRegisterBump.visibility = View.GONE
+
+                binding.btnCamera.isEnabled = false
+                binding.btnCamera.visibility = View.GONE
+
+                binding.btnGallery.isEnabled = false
+                binding.btnGallery.visibility = View.GONE
+
+                binding.imgBumpAfter.setImageBitmap(bitmap) // Establecer la imagen en el ImageView
+                Log.i("FBApp", "Descargado exitosamente")
+            }
+            .addOnFailureListener { exception ->
+                // Manejar la falla en la descarga
+                if (exception is StorageException && exception.errorCode == StorageException.ERROR_OBJECT_NOT_FOUND) {
+                    Log.w("FBApp", "Imagen fija no encontrada", exception)
+                } else {
+                    // Manejar otros tipos de errores
+                    Log.e("FBApp", "Error al descargar el archivo", exception)
+                }
             }
     }
 
@@ -269,7 +306,7 @@ class ReportFixedActivity : AppCompatActivity() {
 
                 myRef.setValue(newFixReport)
                     .addOnSuccessListener {
-                        saveImage(keyFixedRport)
+                        saveImage(key)
                         Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
                     }
                     .addOnFailureListener { exception ->
