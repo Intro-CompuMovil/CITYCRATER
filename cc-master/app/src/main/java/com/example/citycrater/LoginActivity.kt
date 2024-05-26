@@ -39,7 +39,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun signInUser(email: String, password: String){
-        if(validateForm()){
+        if(validateForm() && UserSessionManager.validateEmail(email) && UserSessionManager.validatePassword(password)){
             auth.signInWithEmailAndPassword(email,password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
