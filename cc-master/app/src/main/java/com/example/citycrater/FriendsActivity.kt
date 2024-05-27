@@ -17,6 +17,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityFriendsBinding
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.permissions.Permission
@@ -27,6 +28,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.database.FirebaseDatabase
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -202,6 +204,15 @@ class FriendsActivity : AppCompatActivity() {
                         R.drawable.baseline_location_pin_24,
                         MarkerType.CURRENT
                     )
+
+                    // Update user's location in Firebase
+                    val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
+                    val userLocation = mapOf(
+                        "latitude" to location.latitude,
+                        "longitude" to location.longitude
+                    )
+                    userLocationRef.updateChildren(userLocation)
+
                     currentLocationmarker?.let { map!!.overlays.add(it) }
                     map!!.controller.setCenter(currentLocationmarker!!.position)
                     drawCircle()

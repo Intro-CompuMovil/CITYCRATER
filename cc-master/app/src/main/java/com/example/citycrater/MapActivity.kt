@@ -22,6 +22,7 @@ import com.example.citycrater.databinding.ActivityMapBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.model.Bump
+import com.example.citycrater.model.User
 import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -381,6 +382,13 @@ class MapActivity : AppCompatActivity() {
                     currentLocationmarker?.let { map!!.overlays.add(it) }
                     //map!!.controller.setCenter(currentLocationmarker!!.position)
 
+                    // Update user's location in Firebase
+                    val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
+                    val userLocation = mapOf(
+                        "latitude" to location.latitude,
+                        "longitude" to location.longitude
+                    )
+                    userLocationRef.updateChildren(userLocation)
 
 
                     currentLocationmarker!!.setOnMarkerClickListener { marker, mapView ->
