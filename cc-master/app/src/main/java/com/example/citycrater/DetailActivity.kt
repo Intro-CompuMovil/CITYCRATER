@@ -284,6 +284,7 @@ class DetailActivity : AppCompatActivity() {
         storageRef.delete()
             .addOnSuccessListener {
                 Toast.makeText(this, "ELIMINO IAMGEN DE HUECO REPARADO", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, RequestsActivity::class.java))
                 Log.d(TAG, "Successfully deleted fixed bump image.")
             }
             .addOnFailureListener { exception ->

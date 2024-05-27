@@ -58,6 +58,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var mLocationRequest: LocationRequest
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
+    private val markers = HashMap<String, Marker>()
 
 
     //SENSORES
@@ -178,6 +179,13 @@ class MapActivity : AppCompatActivity() {
                         startActivity(intent)
                         true
                     }
+
+                    // Store the marker in the HashMap
+                    bumpLocationMarker?.let { marker ->
+                        dataSnapshot.key?.let { key ->
+                            markers[key] = marker
+                        }
+                    }
                 }
             }
 
@@ -185,7 +193,6 @@ class MapActivity : AppCompatActivity() {
                 val changedBump = dataSnapshot.getValue(Bump::class.java)
                 if (changedBump != null) {
                     Log.d(TAG, "Changed bump: ${changedBump.latitude}, ${changedBump.longitude}, ${changedBump.size}")
-                    // TODO: Update your UI here with the changed bump
                 }
             }
 
@@ -194,6 +201,13 @@ class MapActivity : AppCompatActivity() {
                 if (removedBump != null) {
                     Log.d(TAG, "Removed bump: ${removedBump.latitude}, ${removedBump.longitude}, ${removedBump.size}")
                     // TODO: Update your UI here to remove the bump
+                    // Remove the marker from the map and the HashMap
+                    dataSnapshot.key?.let { key ->
+                        markers[key]?.let { marker ->
+                            map!!.overlays.remove(marker)
+                            markers.remove(key)
+                        }
+                    }
                 }
             }
 
@@ -548,23 +562,6 @@ class MapActivity : AppCompatActivity() {
             // Limpia la variable roadOverlay
             roadOverlay = null
         }
-    }
-
-    fun readJsonPairs(fileName: String): List<Pair<Double, Double>> {
-        val inputStream = assets.open(fileName)
-        val jsonString = inputStream.bufferedReader().use { it.readText() }
-        val json = JSONObject(jsonString)
-        val locationsArray = json.getJSONArray("locations")
-        val pairs = mutableListOf<Pair<Double, Double>>()
-
-        for (i in 0 until locationsArray.length()) {
-            val locationObject = locationsArray.getJSONObject(i)
-            val latitude = locationObject.getDouble("latitude")
-            val longitude = locationObject.getDouble("longitude")
-            pairs.add(Pair(latitude, longitude))
-        }
-
-        return pairs
     }
 
 }

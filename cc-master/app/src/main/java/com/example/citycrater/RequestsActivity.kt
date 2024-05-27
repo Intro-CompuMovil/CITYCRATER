@@ -29,6 +29,7 @@ class RequestsActivity : AppCompatActivity() {
     //DATABASE
     val database = FirebaseDatabase.getInstance()
     val myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
+    private var childEventListener: ChildEventListener? = null
     val fixedBumpList = ArrayList<String>()
     val fixedBumpObjects = ArrayList<FixedBump>()
     val fixedBumpKeys = ArrayList<String>()
@@ -39,48 +40,6 @@ class RequestsActivity : AppCompatActivity() {
         binding = ActivityRequestsBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-
-        //lista de reparados
-        val adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, fixedBumpList)
-        binding.reqList.adapter = adapter
-
-
-        val childEventListener = object : ChildEventListener {
-            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                val newFixedBump = dataSnapshot.getValue(FixedBump::class.java)
-                if(newFixedBump != null){
-                    val report = newFixedBump.latitude.toString() + ";" + newFixedBump.longitude
-                    adapter.add(report)
-                    fixedBumpObjects.add(newFixedBump)
-                    dataSnapshot.key?.let { fixedBumpKeys.add(it) }
-                }
-
-            }
-
-            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                // A FixedBump has changed
-            }
-
-            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
-                val removedFixedBump = dataSnapshot.getValue(FixedBump::class.java)
-                if(removedFixedBump != null){
-                    val report = removedFixedBump.latitude.toString() + ";" + removedFixedBump.longitude
-                    adapter.remove(report)
-                    fixedBumpObjects.remove(removedFixedBump)
-                    dataSnapshot.key?.let { fixedBumpKeys.remove(it) }
-                }
-            }
-
-            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                // A FixedBump has changed position
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // Failed to read value
-                Log.w(TAG, "Failed to read value.", databaseError.toException())
-            }
-        }
-        myRef.addChildEventListener(childEventListener)
 
 
         binding.reqList.setOnItemClickListener { parent, view, position, id ->
@@ -134,6 +93,60 @@ class RequestsActivity : AppCompatActivity() {
                     Permission.MY_PERMISSION_REQUEST_LOCATION)
             }
         }
+
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (childEventListener != null) {
+            myRef.removeEventListener(childEventListener!!)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        //lista de reparados
+        val adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, fixedBumpList)
+        binding.reqList.adapter = adapter
+
+        childEventListener = object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val newFixedBump = dataSnapshot.getValue(FixedBump::class.java)
+                if(newFixedBump != null){
+                    val report = newFixedBump.latitude.toString() + ";" + newFixedBump.longitude
+                    adapter.add(report)
+                    fixedBumpObjects.add(newFixedBump)
+                    dataSnapshot.key?.let { fixedBumpKeys.add(it) }
+                }
+
+            }
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // A FixedBump has changed
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                val removedFixedBump = dataSnapshot.getValue(FixedBump::class.java)
+                if(removedFixedBump != null){
+                    val report = removedFixedBump.latitude.toString() + ";" + removedFixedBump.longitude
+                    adapter.remove(report)
+                    fixedBumpObjects.remove(removedFixedBump)
+                    dataSnapshot.key?.let { fixedBumpKeys.remove(it) }
+                }
+            }
+
+            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // A FixedBump has changed position
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Failed to read value
+                Log.w(TAG, "Failed to read value.", databaseError.toException())
+            }
+        }
+
+        childEventListener?.let { myRef.addChildEventListener(it) }
 
     }
 
