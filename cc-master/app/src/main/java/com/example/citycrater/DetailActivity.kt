@@ -3,6 +3,7 @@ package com.example.citycrater
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -13,9 +14,11 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.StrictMode
 import android.util.Log
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityDetailBinding
 import com.example.citycrater.databinding.ActivityFriendsBinding
 import com.example.citycrater.mapsUtils.MapManager
@@ -26,6 +29,8 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
 import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.config.Configuration
@@ -37,6 +42,7 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
+import java.io.File
 
 class DetailActivity : AppCompatActivity() {
     lateinit var binding: ActivityDetailBinding
@@ -47,6 +53,9 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var point: GeoPoint
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var size: String = ""
+    private var keyBump: String = ""
+    private var keyReport: String = ""
 
     //SENSORES
     private lateinit var mSensorManager: SensorManager
@@ -74,8 +83,35 @@ class DetailActivity : AppCompatActivity() {
         map!!.overlays.add(createOverlayEvents())
     }
 
+
+    private fun downloadImage(imageName: String, imageView: ImageView) {
+        val storage = FirebaseStorage.getInstance()
+        val imageRef = storage.reference.child("${DataBase.PATH_BUMPS}/$keyBump/${imageName}_$keyBump.jpg")
+
+        val localFile = File.createTempFile("bumps_$keyBump", "jpg")
+        imageRef.getFile(localFile)
+            .addOnSuccessListener { taskSnapshot ->
+                // Descarga exitosa del archivo
+                val bitmap = BitmapFactory.decodeFile(localFile.absolutePath)
+                imageView.setImageBitmap(bitmap) // Establecer la imagen en el ImageView
+                Log.i("FBApp", "Descargado exitosamente")
+            }
+            .addOnFailureListener { exception ->
+                // Manejar la falla en la descarga
+                if (exception is StorageException && exception.errorCode == StorageException.ERROR_OBJECT_NOT_FOUND) {
+                    Log.w("FBApp", "Imagen $imageName no encontrada", exception)
+                } else {
+                    // Manejar otros tipos de errores
+                    Log.e("FBApp", "Error al descargar el archivo", exception)
+                }
+            }
+    }
+
     override fun onResume() {
         super.onResume()
+        map!!.onResume()
+        mSensorManager.registerListener(mLightSensorListener, mLightSensor,
+            SensorManager.SENSOR_DELAY_NORMAL)
 
         //vista de admin
         if(UserSessionManager.setAdminReportsView(binding.btnReports)){
@@ -84,25 +120,6 @@ class DetailActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         }
-
-        val intent = this.intent
-        latitude = intent.getStringExtra("latitude")!!.toDouble()
-        longitude = intent.getStringExtra("longitude")!!.toDouble()
-        val direccion = MapManager.getAddressFromCoordinates(latitude, longitude)
-        point = GeoPoint(latitude, longitude)
-
-        binding.txtlocation.text = "Hueco reparado en: " + longitude + "  ;  "  + latitude
-
-        map!!.onResume()
-
-        mSensorManager.registerListener(mLightSensorListener, mLightSensor,
-            SensorManager.SENSOR_DELAY_NORMAL)
-
-        val mapController = map!!.controller
-        mapController.setZoom(15)
-        createMarker(point, direccion, null, R.drawable.baseline_location_on_24, MarkerType.CURRENT)
-        currentLocationmarker?.let { map!!.overlays.add(it) }
-        mapController.setCenter(point);
 
     }
     override fun onPause() {
@@ -121,6 +138,31 @@ class DetailActivity : AppCompatActivity() {
         map = binding.osmMap
         map!!.setTileSource(TileSourceFactory.MAPNIK)
         map!!.setMultiTouchControls(true)
+
+        val intent = this.intent
+        latitude = intent.getStringExtra("latitude")!!.toDouble()
+        longitude = intent.getStringExtra("longitude")!!.toDouble()
+        size = intent.getStringExtra("size")!!
+        keyBump = intent.getStringExtra("keyBump")!!
+        keyReport = intent.getStringExtra("keyReport")!!
+
+        // TEXT INFO
+        binding.txtlocation.text = longitude.toString() + "  ;  "  + latitude
+        binding.txtSize.text = size
+
+        // LOCATION INFO
+        val direccion = MapManager.getAddressFromCoordinates(latitude, longitude)
+        point = GeoPoint(latitude, longitude)
+
+        //IMAGES INFO
+        downloadImage(DataBase.BUMP_FIXED_IMAGE_NAME, binding.imgBumpAfter)
+        downloadImage(DataBase.BUMP_REGISTERED_IMAGE_NAME, binding.imgBumpBefore)
+
+        val mapController = map!!.controller
+        mapController.setZoom(15)
+        createMarker(point,direccion, null, R.drawable.baseline_location_on_24, MarkerType.CURRENT)
+        currentLocationmarker?.let { map!!.overlays.add(it) }
+        mapController.setCenter(point);
     }
 
     //LISTENNERS DE LA PANTALLA
@@ -184,6 +226,10 @@ class DetailActivity : AppCompatActivity() {
                     arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
                     Permission.MY_PERMISSION_REQUEST_LOCATION)
             }
+        }
+
+        binding.btnDelete.setOnClickListener {
+
         }
     }
 

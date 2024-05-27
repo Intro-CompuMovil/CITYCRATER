@@ -304,26 +304,6 @@ class ReportFixedActivity : AppCompatActivity() {
                 //revisar si la imagen es la misma
                 Toast.makeText(this, "LAS IMAGENES SON IGUALES", Toast.LENGTH_SHORT).show()
             }else{
-                /*//registrar reporte de reparacion en la bd
-                if(exists()){
-                    Toast.makeText(this, "ALREADY REPORTED", Toast.LENGTH_SHORT).show()
-                    downloadFixedimage()
-                }else{
-                    val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
-                    myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
-                    val keyFixedRport = myRef.push().key
-                    myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyFixedRport)
-
-                    myRef.setValue(newFixReport)
-                        .addOnSuccessListener {
-                            saveImage(key)
-                            Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.w(TAG, "Failed to save bump: $exception")
-                        }
-                }*/
-
                 myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
 
                 // Query the database for Bumps with the same latitude and longitude
@@ -346,7 +326,7 @@ class ReportFixedActivity : AppCompatActivity() {
                             // If no Bump with the same latitude and longitude exists, register the new Bump
                             val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
                             val keyReport = myRef.push().key
-                            myRef = database.getReference(DataBase.PATH_BUMPS + keyReport)
+                            myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyReport)
 
                             myRef.setValue(newFixReport)
                                 .addOnSuccessListener {
@@ -366,14 +346,10 @@ class ReportFixedActivity : AppCompatActivity() {
                         Log.w(TAG, "Failed to read value: $databaseError")
                     }
                 })
-
             }
-
         }else{
             Toast.makeText(this, "FALTAN DATOS", Toast.LENGTH_SHORT).show()
         }
-
-
     }
 
 
