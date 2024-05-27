@@ -31,13 +31,18 @@ import com.example.citycrater.databinding.ActivityHomeBinding
 import com.example.citycrater.databinding.ActivityReportFixedBinding
 import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
+import com.example.citycrater.model.Bump
 import com.example.citycrater.model.FixedBump
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.UploadTask
@@ -82,6 +87,8 @@ class ReportFixedActivity : AppCompatActivity() {
     private lateinit var myRef: DatabaseReference
     val TAG = "REGISTER_BUMP"
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityReportFixedBinding.inflate(layoutInflater)
@@ -91,14 +98,6 @@ class ReportFixedActivity : AppCompatActivity() {
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
         Configuration.getInstance().setUserAgentValue("com.example.citycrater")
-
-        //vista de admin
-        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
-            binding.btnReports.setOnClickListener {
-                val intent = Intent(this, RequestsActivity::class.java)
-                startActivity(intent)
-            }
-        }
 
         //INICIALIZACION
         initialize()
@@ -113,13 +112,37 @@ class ReportFixedActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
+
+        map!!.onResume()
+        mSensorManager.registerListener(mLightSensorListener, mLightSensor,
+            SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+
+    //INICIALIZACION
+    private fun initialize(){
+        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)!!
+        darkModeLum = false
+        lightModeLum = true
+
+        map = binding.osmMap
+        map!!.setTileSource(TileSourceFactory.MAPNIK)
+        map!!.setMultiTouchControls(true)
+
+        //BUMP DATA
         val intent = this.intent
         latitude = intent.getStringExtra("latitude")!!.toDouble()
         longitude = intent.getStringExtra("longitude")!!.toDouble()
         size = intent.getStringExtra("size")!!
         key = intent.getStringExtra("key")!!
-
-        Toast.makeText(this, key, Toast.LENGTH_SHORT).show()
 
         val direccion = MapManager.getAddressFromCoordinates(latitude, longitude)
         point = GeoPoint(latitude, longitude)
@@ -132,11 +155,6 @@ class ReportFixedActivity : AppCompatActivity() {
 
         //fixed image
         downloadFixedimage()
-
-        map!!.onResume()
-
-        mSensorManager.registerListener(mLightSensorListener, mLightSensor,
-            SensorManager.SENSOR_DELAY_NORMAL)
 
         val mapController = map!!.controller
         mapController.setZoom(15)
@@ -200,18 +218,6 @@ class ReportFixedActivity : AppCompatActivity() {
         super.onPause()
         map!!.onPause()
         mSensorManager.unregisterListener(mLightSensorListener)
-    }
-
-    //INICIALIZACION
-    private fun initialize(){
-        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)!!
-        darkModeLum = false
-        lightModeLum = true
-
-        map = binding.osmMap
-        map!!.setTileSource(TileSourceFactory.MAPNIK)
-        map!!.setMultiTouchControls(true)
     }
 
     //LISTENNERS DE LA PANTALLA
@@ -298,20 +304,69 @@ class ReportFixedActivity : AppCompatActivity() {
                 //revisar si la imagen es la misma
                 Toast.makeText(this, "LAS IMAGENES SON IGUALES", Toast.LENGTH_SHORT).show()
             }else{
-                //registrar reporte de reparacion en la bd
-                val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
-                myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
-                val keyFixedRport = myRef.push().key
-                myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyFixedRport)
+                /*//registrar reporte de reparacion en la bd
+                if(exists()){
+                    Toast.makeText(this, "ALREADY REPORTED", Toast.LENGTH_SHORT).show()
+                    downloadFixedimage()
+                }else{
+                    val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
+                    myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
+                    val keyFixedRport = myRef.push().key
+                    myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyFixedRport)
 
-                myRef.setValue(newFixReport)
-                    .addOnSuccessListener {
-                        saveImage(key)
-                        Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
+                    myRef.setValue(newFixReport)
+                        .addOnSuccessListener {
+                            saveImage(key)
+                            Log.d(TAG, "BUMP SUCCESSFULLY REGISTERED IN REALTIME")
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Failed to save bump: $exception")
+                        }
+                }*/
+
+                myRef = database.getReference(DataBase.PATH_FIXED_BUMPS)
+
+                // Query the database for Bumps with the same latitude and longitude
+                val query = myRef.orderByChild("keyBump").equalTo(key)
+                    .limitToFirst(1)
+
+                query.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        var exists = false
+
+                        for (snapshot in dataSnapshot.children) {
+                            val report = snapshot.getValue(FixedBump::class.java)
+                            if (report != null && report.keyBump == key) {
+                                exists = true
+                                break
+                            }
+                        }
+
+                        if (!exists) {
+                            // If no Bump with the same latitude and longitude exists, register the new Bump
+                            val newFixReport = FixedBump(key, UserSessionManager.CURRENT_UID, size, latitude, longitude)
+                            val keyReport = myRef.push().key
+                            myRef = database.getReference(DataBase.PATH_BUMPS + keyReport)
+
+                            myRef.setValue(newFixReport)
+                                .addOnSuccessListener {
+                                    saveImage(key)
+                                    Log.d(TAG, "BUMP REPORTED SUCCESSFULLY REGISTERED IN REALTIME")
+                                }
+                                .addOnFailureListener { exception ->
+                                    Log.w(TAG, "Failed to save bump report: $exception")
+                                }
+                        } else {
+                            Toast.makeText(baseContext, "A bump report already exists", Toast.LENGTH_SHORT).show()
+                            downloadFixedimage()
+                        }
                     }
-                    .addOnFailureListener { exception ->
-                        Log.w(TAG, "Failed to save bump: $exception")
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Log.w(TAG, "Failed to read value: $databaseError")
                     }
+                })
+
             }
 
         }else{
@@ -320,6 +375,7 @@ class ReportFixedActivity : AppCompatActivity() {
 
 
     }
+
 
     private fun saveImage(keyFixedReport: String?){
         if(key != null){

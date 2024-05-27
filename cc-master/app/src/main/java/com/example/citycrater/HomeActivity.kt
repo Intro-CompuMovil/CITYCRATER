@@ -21,14 +21,6 @@ class HomeActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        //vista de admin
-        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
-            binding.btnReports.setOnClickListener {
-                val intent = Intent(this, RequestsActivity::class.java)
-                startActivity(intent)
-            }
-        }
-
         //LISTENNERS DE LA PANTALLA
         setListeners ()
 
@@ -37,6 +29,18 @@ class HomeActivity : AppCompatActivity() {
 
 
 
+    }
+
+    //LIFECYCLE
+    override fun onResume() {
+        super.onResume()
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
     }
 
     //LISTENNERS DE LA PANTALLA

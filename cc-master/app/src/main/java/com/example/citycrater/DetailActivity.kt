@@ -65,15 +65,6 @@ class DetailActivity : AppCompatActivity() {
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //vista de admin
-        //vista de admin
-        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
-            binding.btnReports.setOnClickListener {
-                val intent = Intent(this, RequestsActivity::class.java)
-                startActivity(intent)
-            }
-        }
-
         //INICIALIZACION
         initialize()
 
@@ -85,6 +76,14 @@ class DetailActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
 
         val intent = this.intent
         latitude = intent.getStringExtra("latitude")!!.toDouble()

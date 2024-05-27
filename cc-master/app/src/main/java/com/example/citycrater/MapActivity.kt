@@ -97,14 +97,6 @@ class MapActivity : AppCompatActivity() {
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //vista de admin
-        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
-            binding.btnReports.setOnClickListener {
-                val intent = Intent(this, RequestsActivity::class.java)
-                startActivity(intent)
-            }
-        }
-
         //INICIALIZACION DE VARIABLES
         initialize()
 
@@ -124,6 +116,15 @@ class MapActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        //vista de admin
+        if(UserSessionManager.setAdminReportsView(binding.btnReports)){
+            binding.btnReports.setOnClickListener {
+                val intent = Intent(this, RequestsActivity::class.java)
+                startActivity(intent)
+            }
+        }
+
         map!!.onResume()
 
         mSensorManager.registerListener(mLightSensorListener, mLightSensor,
