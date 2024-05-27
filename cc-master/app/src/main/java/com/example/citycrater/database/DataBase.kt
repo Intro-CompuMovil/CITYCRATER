@@ -7,5 +7,6 @@ class DataBase {
         const val PATH_FIXED_BUMPS = "fixed/"
         const val BUMP_REGISTERED_IMAGE_NAME = "bump"
         const val BUMP_FIXED_IMAGE_NAME = "bumpFixed"
+
     }
 }

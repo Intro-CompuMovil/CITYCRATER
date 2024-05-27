@@ -7,24 +7,28 @@ class User {
     var password: String = ""
     var usertype: String = ""
     var photo: String = ""
+    var latitude: Double = 0.0
+    var longitude: Double = 0.0
 
     constructor() {
         this.name = ""
         this.email = ""
         this.phone = ""
-        this.password = ""
         this.usertype = ""
         this.photo = ""
+        this.latitude = 0.0
+        this.longitude = 0.0
     }
 
 
-    constructor(name: String, email: String, phone: String, password: String, usertype: String) {
+    constructor(name: String, email: String, phone: String, usertype: String, latitude: Double, longitude: Double) {
         this.name = name
         this.email = email
         this.phone = phone
-        this.password = password
         this.usertype = usertype
         this.photo = ""
+        this.latitude = latitude
+        this.longitude = longitude
     }
 
 
