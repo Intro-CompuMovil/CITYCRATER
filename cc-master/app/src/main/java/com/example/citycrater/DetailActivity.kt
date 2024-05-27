@@ -29,6 +29,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import org.osmdroid.bonuspack.routing.OSRMRoadManager
@@ -63,6 +64,9 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var mLightSensorListener: SensorEventListener
     private var darkModeLum: Boolean = false
     private var lightModeLum: Boolean = true
+
+    //DATABASE
+    private val TAG = "FB DELETE BUMP"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,8 +233,63 @@ class DetailActivity : AppCompatActivity() {
         }
 
         binding.btnDelete.setOnClickListener {
-
+            deleteBump()
         }
+    }
+
+    private fun deleteBump(){
+        //eliminar reporte del realtime
+        val database = FirebaseDatabase.getInstance()
+        var myRef = database.getReference(DataBase.PATH_FIXED_BUMPS + keyReport)
+
+        myRef.removeValue()
+            .addOnSuccessListener {
+                Toast.makeText(this, "ELIMINO REPORTE", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Successfully deleted report.")
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Failed to delete report: $exception")
+            }
+
+        //eliminar hueco del realtime
+        myRef = database.getReference(DataBase.PATH_BUMPS + keyBump)
+        myRef.removeValue()
+            .addOnSuccessListener {
+                Toast.makeText(this, "ELIMINO HUECO", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Successfully deleted bump.")
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Failed to delete bump: $exception")
+            }
+
+        //eliminar imagenes
+        val storage = FirebaseStorage.getInstance()
+        var storageRef = storage.getReference(
+            "${DataBase.PATH_BUMPS}/$keyBump/${DataBase.BUMP_REGISTERED_IMAGE_NAME}_$keyBump.jpg")
+
+        //eliminar imagen de hueco
+        storageRef.delete()
+            .addOnSuccessListener {
+                Toast.makeText(this, "ELIMINO IAMGEN DE HUECO", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Successfully deleted bump image.")
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Failed to delete bump image: $exception")
+            }
+
+        //eliminar imagen de hueco reparado
+        storageRef = storage.getReference(
+            "${DataBase.PATH_BUMPS}/$keyBump/${DataBase.BUMP_FIXED_IMAGE_NAME}_$keyBump.jpg")
+
+        storageRef.delete()
+            .addOnSuccessListener {
+                Toast.makeText(this, "ELIMINO IAMGEN DE HUECO REPARADO", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Successfully deleted fixed bump image.")
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Failed to delete fixed bump image: $exception")
+            }
+
     }
 
     //FUNCIONES RELACIONADAS CON EL MAPA
