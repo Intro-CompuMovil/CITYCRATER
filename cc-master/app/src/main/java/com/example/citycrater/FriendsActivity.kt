@@ -13,13 +13,17 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.StrictMode
 import android.util.Log
+import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityFriendsBinding
+import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
+import com.example.citycrater.model.Bump
+import com.example.citycrater.model.User
 import com.example.citycrater.permissions.Permission
 import com.example.citycrater.users.UserSessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -28,7 +32,12 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -50,8 +59,12 @@ class FriendsActivity : AppCompatActivity() {
     private lateinit var mLocationRequest: LocationRequest
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
-    private var radius: Double = 1000.0 //valor por defecto
+    private var userMarker: Marker? = null
+    private var radius: Double = 100000.0 //valor por defecto
+    private var newRadius: Double = 100000.0 //valor por defecto
+    private var previousRadius: Double = 100000.0 //valor por defecto
     private var circleOverlay: Polygon? = null
+    private val markers = HashMap<String, Marker>()
 
 
     //SENSORES
@@ -61,6 +74,12 @@ class FriendsActivity : AppCompatActivity() {
     private var darkModeLum: Boolean = false
     private var lightModeLum: Boolean = true
 
+
+    //DATABASE
+    private val database = FirebaseDatabase.getInstance()
+    private lateinit var usersRef: DatabaseReference
+    private lateinit var childEventListener: ChildEventListener
+    val TAG = "FB UPDATE USER"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,7 +135,72 @@ class FriendsActivity : AppCompatActivity() {
                 }
             }
         }
+
+        listenForUsers()
     }
+
+    private fun listenForUsers(){
+        usersRef = database.getReference(DataBase.PATH_USERS)
+
+        childEventListener = object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val user = dataSnapshot.getValue(User::class.java)
+                if(currentLocationmarker != null && user != null &&
+                    MapManager.isInsideRadious(radius, currentLocationmarker!!.position, GeoPoint(user.latitude, user.longitude))
+                    && user.email != UserSessionManager.CURRENT.email){
+
+                    userMarker = createMarkerRetMark(GeoPoint(user!!.latitude, user!!.longitude), "${user.name}", null, R.drawable.baseline_location_pin_25)
+                    userMarker.let { map!!.overlays.add(it) }
+
+                    // Store the marker in the HashMap
+                    userMarker?.let { marker ->
+                        dataSnapshot.key?.let { key ->
+                            markers[key] = marker
+                        }
+                    }
+                }
+
+            }
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val changedUser = dataSnapshot.getValue(User::class.java)
+                if(currentLocationmarker != null && changedUser != null
+                    && MapManager.isInsideRadious(radius, currentLocationmarker!!.position, GeoPoint(changedUser.latitude, changedUser.longitude))
+                    && changedUser.email != UserSessionManager.CURRENT.email){
+                    // Get the existing marker from the HashMap
+                    dataSnapshot.key?.let { key ->
+                        val marker = markers[key]
+                        if (marker != null) {
+                            // Update the marker's position
+                            marker.position = GeoPoint(changedUser.latitude, changedUser.longitude)
+                            marker.title = "${changedUser.name}"
+
+                            // Update the map
+                            map!!.invalidate()
+                        }
+                    }
+                }
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                val removedBump = dataSnapshot.getValue(User::class.java)
+                if (removedBump != null) {
+                    Log.d(TAG, "Removed bump: ${removedBump.latitude}, ${removedBump.longitude}, ${removedBump.name}")
+                }
+            }
+
+            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // This method is triggered when a child location's priority changes
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.w(TAG, "Failed to read value: $databaseError")
+            }
+        }
+
+        usersRef.addChildEventListener(childEventListener)
+    }
+
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
@@ -130,6 +214,7 @@ class FriendsActivity : AppCompatActivity() {
         stopLocationUpdates()
         map!!.onPause()
         mSensorManager.unregisterListener(mLightSensorListener)
+        usersRef.removeEventListener(childEventListener)
     }
     private fun stopLocationUpdates() {
         mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback)
@@ -159,13 +244,61 @@ class FriendsActivity : AppCompatActivity() {
                 val radioE: Double? = binding.radio.text.toString().toDouble()
                 if (radioE != null) {
                     //actualizar radio
-                    radius = radioE
+                    previousRadius = radius
+                    updateDisplayedUsers(radioE)
                 } else {
                     Toast.makeText(this, "Radio vacío", Toast.LENGTH_SHORT).show()
                 }
             }
             true
         }
+    }
+
+    private fun updateDisplayedUsers(radioE: Double) {
+        if (radioE > previousRadius) {
+            // Verificar la base de datos y agregar nuevos usuarios dentro del nuevo radio
+            usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    for (userSnapshot in dataSnapshot.children) {
+                        val user = userSnapshot.getValue(User::class.java)
+                        if (user != null && currentLocationmarker != null &&
+                            !markers.containsKey(userSnapshot.key) &&
+                            MapManager.isInsideRadious(radioE, currentLocationmarker!!.position, GeoPoint(user.latitude, user.longitude))
+                            && user.email != UserSessionManager.CURRENT.email) {
+
+                            val userMarker = createMarkerRetMark(GeoPoint(user.latitude, user.longitude), "${user.name}", null, R.drawable.baseline_location_pin_25)
+                            userMarker?.let {
+                                map?.overlays?.add(it)
+                                markers[userSnapshot.key!!] = it
+                            }
+                        }
+                    }
+                    map!!.invalidate()
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Log.w(TAG, "Failed to read value: $databaseError")
+                }
+            })
+        } else if (radioE < previousRadius) {
+            // Verificar el HashMap y eliminar usuarios que estén fuera del nuevo radio
+            val iterator = markers.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                val userId = entry.key
+                val marker = entry.value
+                if (!MapManager.isInsideRadious(radioE, currentLocationmarker!!.position, marker.position)) {
+                    // El usuario está fuera del nuevo radio, eliminar el marcador del mapa y del HashMap
+                    map?.overlays?.remove(marker)
+                    iterator.remove()
+                }
+            }
+            map?.invalidate()
+        }
+        // Actualizar el valor de previousRadius al nuevo radio
+        radius = radioE
+        removeCircle()
+        drawCircle()
     }
 
     //LISTENNERS DE LA PANTALLA
@@ -205,16 +338,16 @@ class FriendsActivity : AppCompatActivity() {
                         MarkerType.CURRENT
                     )
 
-                    // Update user's location in Firebase
+                    /*// Update user's location in Firebase
                     val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
                     val userLocation = mapOf(
                         "latitude" to location.latitude,
                         "longitude" to location.longitude
                     )
-                    userLocationRef.updateChildren(userLocation)
+                    userLocationRef.updateChildren(userLocation)*/
 
                     currentLocationmarker?.let { map!!.overlays.add(it) }
-                    map!!.controller.setCenter(currentLocationmarker!!.position)
+                    //map!!.controller.setCenter(currentLocationmarker!!.position)
                     drawCircle()
                 }
             }
@@ -270,20 +403,40 @@ class FriendsActivity : AppCompatActivity() {
         }
     }
 
+    private fun createMarkerRetMark(p: GeoPoint, title: String?, desc: String?, iconID: Int): Marker? {
+        var marker: Marker? = null
+        if (map != null) {
+            marker = Marker(map)
+            title?.let { marker.title = it }
+            desc?.let { marker.subDescription = it }
+            if (iconID != 0) {
+                val myIcon = resources.getDrawable(iconID, this.theme)
+                marker.icon = myIcon
+            }
+            marker.position = p
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        }
+
+        return marker
+    }
+
     private fun drawCircle(){
         // Crea una instancia de Polygon
-        val circle = Polygon(map)
+        val circle = object : Polygon(map) {
+            override fun onSingleTapConfirmed(e: MotionEvent?, mapView: MapView?): Boolean {
+                // Devuelve false para permitir que los eventos de toque pasen a través del círculo
+                return false
+            }
+        }
         circleOverlay = circle
         circleOverlay?.setInfoWindow(null)
 
         // Configura el centro del círculo
         circle.points = Polygon.pointsAsCircle(currentLocationmarker!!.position, radius)
 
-        // Configura el color del relleno (transparente) y el color del borde
-        circle.fillPaint.color = Color.argb(50, 0, 0, 255) // Color azul con transparencia
-        circle.fillPaint.style = Paint.Style.FILL
-
-        circle.outlinePaint.color = Color.BLUE // Color del borde
+        // Configura el color del borde
+        circle.outlinePaint.color = Color.RED // Color del borde
+        circle.outlinePaint.style = Paint.Style.STROKE // Solo borde, sin relleno
         circle.outlinePaint.strokeWidth = 2f // Ancho del borde
 
         // Agrega el círculo al mapa

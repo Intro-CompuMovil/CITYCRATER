@@ -6,8 +6,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import org.osmdroid.util.GeoPoint
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MapManager {
     companion object{
@@ -71,6 +77,26 @@ class MapManager {
                 ex.printStackTrace()
                 return mutableListOf()
             }
+        }
+
+        fun isInsideRadious(radius: Double, pointCenter: GeoPoint, point: GeoPoint): Boolean{
+            val distance = calculateDistance(pointCenter, point)
+            return distance <= radius
+        }
+
+        fun calculateDistance(point1: GeoPoint, point2: GeoPoint): Double {
+            val earthRadius = 6371000.0 // radius in kilometers
+
+            val latDiff = Math.toRadians(point2.latitude - point1.latitude)
+            val lonDiff = Math.toRadians(point2.longitude - point1.longitude)
+
+            val a = sin(latDiff / 2).pow(2.0) +
+                    cos(Math.toRadians(point1.latitude)) * cos(Math.toRadians(point2.latitude)) *
+                    sin(lonDiff / 2).pow(2.0)
+
+            val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+            return earthRadius * c
         }
 
     }
