@@ -19,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.citycrater.database.DataBase
 import com.example.citycrater.databinding.ActivityFriendsBinding
+import com.example.citycrater.mapsUtils.MapManager
 import com.example.citycrater.markers.MarkerType
 import com.example.citycrater.model.Bump
 import com.example.citycrater.model.User
@@ -35,6 +36,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -57,7 +59,9 @@ class FriendsActivity : AppCompatActivity() {
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
     private var userMarker: Marker? = null
-    private var radius: Double = 1000.0 //valor por defecto
+    private var radius: Double = 100000.0 //valor por defecto
+    private var newRadius: Double = 100000.0 //valor por defecto
+    private var previousRadius: Double = 100000.0 //valor por defecto
     private var circleOverlay: Polygon? = null
     private val markers = HashMap<String, Marker>()
 
@@ -140,7 +144,10 @@ class FriendsActivity : AppCompatActivity() {
         childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 val user = dataSnapshot.getValue(User::class.java)
-                if(user != null){
+                if(currentLocationmarker != null && user != null &&
+                    MapManager.isInsideRadious(radius, currentLocationmarker!!.position, GeoPoint(user.latitude, user.longitude))
+                    && user.email != UserSessionManager.CURRENT.email){
+
                     userMarker = createMarkerRetMark(GeoPoint(user!!.latitude, user!!.longitude), "${user.name}", null, R.drawable.baseline_location_pin_25)
                     userMarker.let { map!!.overlays.add(it) }
 
@@ -156,7 +163,9 @@ class FriendsActivity : AppCompatActivity() {
 
             override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 val changedUser = dataSnapshot.getValue(User::class.java)
-                if(changedUser != null){
+                if(currentLocationmarker != null && changedUser != null
+                    && MapManager.isInsideRadious(radius, currentLocationmarker!!.position, GeoPoint(changedUser.latitude, changedUser.longitude))
+                    && changedUser.email != UserSessionManager.CURRENT.email){
                     // Get the existing marker from the HashMap
                     dataSnapshot.key?.let { key ->
                         val marker = markers[key]
@@ -234,13 +243,61 @@ class FriendsActivity : AppCompatActivity() {
                 val radioE: Double? = binding.radio.text.toString().toDouble()
                 if (radioE != null) {
                     //actualizar radio
-                    radius = radioE
+                    previousRadius = radius
+                    updateDisplayedUsers(radioE)
                 } else {
                     Toast.makeText(this, "Radio vacío", Toast.LENGTH_SHORT).show()
                 }
             }
             true
         }
+    }
+
+    private fun updateDisplayedUsers(radioE: Double) {
+        if (radioE > previousRadius) {
+            // Verificar la base de datos y agregar nuevos usuarios dentro del nuevo radio
+            usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    for (userSnapshot in dataSnapshot.children) {
+                        val user = userSnapshot.getValue(User::class.java)
+                        if (user != null && currentLocationmarker != null &&
+                            !markers.containsKey(userSnapshot.key) &&
+                            MapManager.isInsideRadious(radioE, currentLocationmarker!!.position, GeoPoint(user.latitude, user.longitude))
+                            && user.email != UserSessionManager.CURRENT.email) {
+
+                            val userMarker = createMarkerRetMark(GeoPoint(user.latitude, user.longitude), "${user.name}", null, R.drawable.baseline_location_pin_25)
+                            userMarker?.let {
+                                map?.overlays?.add(it)
+                                markers[userSnapshot.key!!] = it
+                            }
+                        }
+                    }
+                    map!!.invalidate()
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Log.w(TAG, "Failed to read value: $databaseError")
+                }
+            })
+        } else if (radioE < previousRadius) {
+            // Verificar el HashMap y eliminar usuarios que estén fuera del nuevo radio
+            val iterator = markers.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                val userId = entry.key
+                val marker = entry.value
+                if (!MapManager.isInsideRadious(radioE, currentLocationmarker!!.position, marker.position)) {
+                    // El usuario está fuera del nuevo radio, eliminar el marcador del mapa y del HashMap
+                    map?.overlays?.remove(marker)
+                    iterator.remove()
+                }
+            }
+            map?.invalidate()
+        }
+        // Actualizar el valor de previousRadius al nuevo radio
+        radius = radioE
+        removeCircle()
+        drawCircle()
     }
 
     //LISTENNERS DE LA PANTALLA
@@ -284,7 +341,7 @@ class FriendsActivity : AppCompatActivity() {
 
                     currentLocationmarker?.let { map!!.overlays.add(it) }
                     //map!!.controller.setCenter(currentLocationmarker!!.position)
-                    //drawCircle()
+                    drawCircle()
                 }
             }
         }
