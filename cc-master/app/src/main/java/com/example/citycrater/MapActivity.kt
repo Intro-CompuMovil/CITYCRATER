@@ -48,6 +48,8 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import java.io.IOException
+import kotlin.random.Random
+import kotlin.math.*
 
 class MapActivity : AppCompatActivity() {
 
@@ -60,7 +62,7 @@ class MapActivity : AppCompatActivity() {
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
     private val markers = HashMap<String, Marker>()
-
+    private var locationUpd: Boolean = false
 
     //SENSORES
     private lateinit var mSensorManager: SensorManager
@@ -84,6 +86,7 @@ class MapActivity : AppCompatActivity() {
     //DATABASE
     private val database = FirebaseDatabase.getInstance()
     private lateinit var bumpsRef: DatabaseReference
+    private lateinit var usersRef: DatabaseReference
     private lateinit var childEventListener: ChildEventListener
 
     val TAG = "REGISTER_BUMP"
@@ -154,41 +157,51 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun listenForBumps() {
+        //bumpsRef = database.getReference(DataBase.PATH_BUMPS)
         bumpsRef = database.getReference(DataBase.PATH_BUMPS)
 
         childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                val newBump = dataSnapshot.getValue(Bump::class.java)
-                if (newBump != null) {
-                    Log.d(TAG, "New bump: ${newBump.latitude}, ${newBump.longitude}, ${newBump.size}")
-                    // TODO: Update your UI here with the new bump
-                    bumpLocationMarker = createMarkerRetMark(GeoPoint(newBump.latitude, newBump.longitude), "Size: ${newBump.size}", null, R.drawable.baseline_location_pin_25)
-                    bumpLocationMarker.let { map!!.overlays.add(it) }
+                    val newBump = dataSnapshot.getValue(Bump::class.java)
+                    if (newBump != null) {
+                        Log.d(
+                            TAG,
+                            "New bump: ${newBump.latitude}, ${newBump.longitude}, ${newBump.size}"
+                        )
+                        // TODO: Update your UI here with the new bump
+                        bumpLocationMarker = createMarkerRetMark(
+                            GeoPoint(newBump.latitude, newBump.longitude),
+                            "Size: ${newBump.size}",
+                            null,
+                            R.drawable.baseline_location_pin_25
+                        )
+                        bumpLocationMarker.let { map!!.overlays.add(it) }
 
-                    // Create local variables for the latitude, longitude, and key
-                    val latitude = newBump.latitude.toString()
-                    val longitude = newBump.longitude.toString()
-                    val size = newBump.size
-                    val key = dataSnapshot.key
+                        // Create local variables for the latitude, longitude, and key
+                        val latitude = newBump.latitude.toString()
+                        val longitude = newBump.longitude.toString()
+                        val size = newBump.size
+                        val key = dataSnapshot.key
 
-                    bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
-                        val intent = Intent(baseContext, ReportFixedActivity::class.java)
-                        intent.putExtra("latitude", latitude)
-                        intent.putExtra("longitude", longitude)
-                        intent.putExtra("size", size)
-                        intent.putExtra("key", key)
-                        startActivity(intent)
-                        true
-                    }
+                        bumpLocationMarker?.setOnMarkerClickListener { marker, mapView ->
+                            val intent = Intent(baseContext, ReportFixedActivity::class.java)
+                            intent.putExtra("latitude", latitude)
+                            intent.putExtra("longitude", longitude)
+                            intent.putExtra("size", size)
+                            intent.putExtra("key", key)
+                            startActivity(intent)
+                            true
+                        }
 
-                    // Store the marker in the HashMap
-                    bumpLocationMarker?.let { marker ->
-                        dataSnapshot.key?.let { key ->
-                            markers[key] = marker
+                        // Store the marker in the HashMap
+                        bumpLocationMarker?.let { marker ->
+                            dataSnapshot.key?.let { key ->
+                                markers[key] = marker
+                            }
                         }
                     }
-                }
             }
+
 
             override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 val changedBump = dataSnapshot.getValue(Bump::class.java)
@@ -220,7 +233,6 @@ class MapActivity : AppCompatActivity() {
                 Log.w(TAG, "Failed to read value: $databaseError")
             }
         }
-
         bumpsRef.addChildEventListener(childEventListener)
     }
 
@@ -376,6 +388,7 @@ class MapActivity : AppCompatActivity() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
                 Log.i("LOCATION", "Location update in the callback: $location")
+                locationUpd = true
                 if (location != null) {
                     val point = GeoPoint(location.latitude, location.longitude)
                     createMarker(point, "you", null, R.drawable.baseline_location_pin_24, MarkerType.CURRENT)
@@ -388,7 +401,7 @@ class MapActivity : AppCompatActivity() {
                         "latitude" to location.latitude,
                         "longitude" to location.longitude
                     )
-                    userLocationRef.updateChildren(userLocation)
+                    //userLocationRef.updateChildren(userLocation)
 
 
                     currentLocationmarker!!.setOnMarkerClickListener { marker, mapView ->
@@ -450,7 +463,7 @@ class MapActivity : AppCompatActivity() {
         if(originMarker != null && destinationMarker != null ){
             startPoint = GeoPoint(originMarker!!.position!!.latitude, originMarker!!.position!!.longitude);
             destinationPoint = GeoPoint(destinationMarker!!.position!!.latitude, destinationMarker!!.position!!.longitude);
-            drawRoute(startPoint,destinationPoint)
+            drawRouteWithoutBumps(startPoint,destinationPoint)
         }
     }
 
@@ -570,6 +583,117 @@ class MapActivity : AppCompatActivity() {
             // Limpia la variable roadOverlay
             roadOverlay = null
         }
+    }
+
+
+
+    private fun drawRouteWithoutBumps(start: GeoPoint, finish: GeoPoint) {
+        var routePoints = ArrayList<GeoPoint>()
+        var routePointsForRoute = ArrayList<GeoPoint>()
+        var routeWithBump: Boolean
+        routePoints.add(start)
+        routePoints.add(finish)
+
+        //routePoints.add(GeoPoint(4.751933, -74.048018))
+
+        var roadAux = roadManager.getRoad(routePoints)
+
+        do {
+            var routeWithBump = false
+
+            // Iterate over markers.values to access each Marker object
+            for (markerEntry in markers.entries) {
+                val markerPosition = markerEntry.value.position
+
+                for (i in 0 until roadAux.mNodes.size) {
+                    val nodeLocation = roadAux.mNodes[i].mLocation
+
+                    // Check for proximity between the marker and the route nodes, excluding start and finish
+                    if (bumpProximityDetector(markerPosition, nodeLocation)
+                        && !bumpProximityDetector(finish, nodeLocation)
+                        && !bumpProximityDetector(start, nodeLocation)) {
+
+                        Log.i("DISTANCE BUMP: ${markerEntry.key} Route: $i", calculateDistance(markerPosition, nodeLocation).toString())
+                        routeWithBump = true
+
+                        Log.i("OLDPOINT", nodeLocation.toString())
+
+                        val newPoint = generateRandomPoint(nodeLocation, 1.0)
+                        Log.i("NEWPOINT", newPoint.toString())
+
+                        routePoints.clear()
+                        routePoints.add(start)
+
+                        // Add the nodes up to the point where the bump was detected
+                        for (k in 0 until i) {
+                            routePoints.add(roadAux.mNodes[k].mLocation)
+                        }
+                        routePoints.add(newPoint)
+                        routePoints.add(finish)
+                        break
+                    }
+                }
+
+                if (routeWithBump) {
+                    roadAux = roadManager.getRoad(routePoints)
+                    break
+                }
+            }
+        } while (routeWithBump)
+
+
+        Log.i("OSM_acticity", "Route length: ${roadAux.mLength} klm")
+        Log.i("OSM_acticity", "Duration: ${roadAux.mDuration / 60} min")
+        if (map != null) {
+            roadOverlay?.let { map!!.overlays.remove(it) }
+            roadOverlay = RoadManager.buildRoadOverlay(roadAux)
+            roadOverlay?.outlinePaint?.color = Color.RED
+            roadOverlay?.outlinePaint?.strokeWidth = 10f
+            map!!.overlays.add(roadOverlay)
+
+            Toast.makeText(this, "Distancia de la ruta: ${roadAux.mLength} km", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun bumpProximityDetector(point1: GeoPoint, point2: GeoPoint): Boolean {
+        if(calculateDistance(point1, point2) <= 1){
+            return true
+        }
+        return false
+    }
+
+    fun calculateDistance(point1: GeoPoint, point2: GeoPoint): Double {
+        val earthRadius = 6371.0 // radius in kilometers
+
+        val latDiff = Math.toRadians(point2.latitude - point1.latitude)
+        val lonDiff = Math.toRadians(point2.longitude - point1.longitude)
+
+        val a = sin(latDiff / 2).pow(2.0) +
+                cos(Math.toRadians(point1.latitude)) * cos(Math.toRadians(point2.latitude)) *
+                sin(lonDiff / 2).pow(2.0)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadius * c
+    }
+
+    fun generateRandomPoint(initialPoint: GeoPoint, distance: Double): GeoPoint {
+        val radius = 6371.0 // Earth's radius in kilometers
+        val bearing = Random.nextDouble(2 * PI) // Random direction
+        val angularDistance = distance / radius // The angular distance
+
+        val lat1 = Math.toRadians(initialPoint.latitude)
+        val lon1 = Math.toRadians(initialPoint.longitude)
+
+        val lat2 = asin(sin(lat1) * cos(angularDistance) +
+                cos(lat1) * sin(angularDistance) * cos(bearing))
+
+        var lon2 = lon1 + atan2(sin(bearing) * sin(angularDistance) * cos(lat1),
+            cos(angularDistance) - sin(lat1) * sin(lat2))
+
+        lon2 = (lon2 + 3 * PI) % (2 * PI) - PI // Normalize to -180..+180
+
+        return GeoPoint(Math.toDegrees(lat2), Math.toDegrees(lon2))
     }
 
 }
