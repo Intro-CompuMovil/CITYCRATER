@@ -1,5 +1,6 @@
 package com.example.citycrater
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -338,16 +339,7 @@ class FriendsActivity : AppCompatActivity() {
                         MarkerType.CURRENT
                     )
 
-                    /*// Update user's location in Firebase
-                    val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
-                    val userLocation = mapOf(
-                        "latitude" to location.latitude,
-                        "longitude" to location.longitude
-                    )
-                    userLocationRef.updateChildren(userLocation)*/
-
                     currentLocationmarker?.let { map!!.overlays.add(it) }
-                    //map!!.controller.setCenter(currentLocationmarker!!.position)
                     drawCircle()
                 }
             }
