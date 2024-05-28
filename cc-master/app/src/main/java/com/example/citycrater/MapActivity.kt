@@ -383,12 +383,12 @@ class MapActivity : AppCompatActivity() {
                     //map!!.controller.setCenter(currentLocationmarker!!.position)
 
                     // Update user's location in Firebase
-                    val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
+                    /*val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
                     val userLocation = mapOf(
                         "latitude" to location.latitude,
                         "longitude" to location.longitude
                     )
-                    userLocationRef.updateChildren(userLocation)
+                    userLocationRef.updateChildren(userLocation)*/
 
 
                     currentLocationmarker!!.setOnMarkerClickListener { marker, mapView ->
