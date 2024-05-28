@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.StrictMode
 import android.util.Log
+import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -337,7 +338,13 @@ class FriendsActivity : AppCompatActivity() {
                         MarkerType.CURRENT
                     )
 
-                    // Update user's location in Firebase
+                    /*// Update user's location in Firebase
+                    val userLocationRef = FirebaseDatabase.getInstance().getReference("${DataBase.PATH_USERS}/${UserSessionManager.CURRENT_UID}")
+                    val userLocation = mapOf(
+                        "latitude" to location.latitude,
+                        "longitude" to location.longitude
+                    )
+                    userLocationRef.updateChildren(userLocation)*/
 
                     currentLocationmarker?.let { map!!.overlays.add(it) }
                     //map!!.controller.setCenter(currentLocationmarker!!.position)
@@ -415,18 +422,21 @@ class FriendsActivity : AppCompatActivity() {
 
     private fun drawCircle(){
         // Crea una instancia de Polygon
-        val circle = Polygon(map)
+        val circle = object : Polygon(map) {
+            override fun onSingleTapConfirmed(e: MotionEvent?, mapView: MapView?): Boolean {
+                // Devuelve false para permitir que los eventos de toque pasen a través del círculo
+                return false
+            }
+        }
         circleOverlay = circle
         circleOverlay?.setInfoWindow(null)
 
         // Configura el centro del círculo
         circle.points = Polygon.pointsAsCircle(currentLocationmarker!!.position, radius)
 
-        // Configura el color del relleno (transparente) y el color del borde
-        circle.fillPaint.color = Color.argb(50, 0, 0, 255) // Color azul con transparencia
-        circle.fillPaint.style = Paint.Style.FILL
-
-        circle.outlinePaint.color = Color.BLUE // Color del borde
+        // Configura el color del borde
+        circle.outlinePaint.color = Color.RED // Color del borde
+        circle.outlinePaint.style = Paint.Style.STROKE // Solo borde, sin relleno
         circle.outlinePaint.strokeWidth = 2f // Ancho del borde
 
         // Agrega el círculo al mapa
