@@ -67,16 +67,6 @@
             android:background="@drawable/absolute_round_corner"
             android:backgroundTint="@color/white"/>
 
-        <EditText
-            android:id="@+id/email"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:layout_marginBottom="10dp"
-            android:hint="Email"
-            android:background="@drawable/absolute_round_corner"
-            android:backgroundTint="@color/white"/>
-
 
         <EditText
             android:id="@+id/phone"
@@ -86,17 +76,6 @@
             android:layout_marginBottom="10dp"
             android:hint="Phone"
             android:inputType="phone"
-            android:background="@drawable/absolute_round_corner"
-            android:backgroundTint="@color/white"/>
-
-        <EditText
-            android:id="@+id/txtPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:layout_marginBottom="10dp"
-            android:hint="Password"
-            android:inputType="textPassword"
             android:background="@drawable/absolute_round_corner"
             android:backgroundTint="@color/white"/>
 

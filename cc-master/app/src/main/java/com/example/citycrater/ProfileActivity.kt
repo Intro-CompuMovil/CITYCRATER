@@ -99,7 +99,6 @@ class ProfileActivity : AppCompatActivity() {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 userObject = dataSnapshot.getValue(User::class.java)
                 binding.name.hint = userObject!!.name
-                binding.email.hint = userObject!!.email
                 binding.phone.hint = userObject!!.phone
 
                 if(userObject!!.photo.isNotEmpty()){
@@ -352,33 +351,8 @@ class ProfileActivity : AppCompatActivity() {
                 if(binding.phone.text.isNotEmpty()){
                     userObject!!.phone = binding.phone.text.toString()
                 }
-                if(binding.email.text.isNotEmpty()){
-                    if(UserSessionManager.validateEmail(binding.email.text.toString())){
-                        auth.currentUser!!.updateEmail(binding.email.text.toString())
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    userObject!!.email = binding.email.text.toString()
-                                    Log.d(TAG, "User email address updated.")
-                                }
-                            }
-                    }else{
-                        Toast.makeText(baseContext, "Correo invalido", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                if(binding.txtPassword.text.isNotEmpty()){
-                    if(UserSessionManager.validatePassword(binding.txtPassword.text.toString())){
-                        auth.currentUser!!.updatePassword(binding.txtPassword.text.toString())
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    userObject!!.password = binding.txtPassword.text.toString()
-                                    Log.d(TAG, "User password updated.")
-                                }
-                            }
-                    }
-                }
                 //LOGICA CAMBIO EMAIL Y CONTRASEÑA
                 Log.i("LONGNAME", binding.name.text.isNotEmpty().toString())
-                Log.i("LONGEMAIL", binding.email.text.isEmpty().toString())
 
                 myRef.setValue(userObject)
             }
